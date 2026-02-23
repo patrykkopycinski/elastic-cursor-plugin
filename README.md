@@ -1,6 +1,6 @@
 # Elastic Developer Experience Cursor Plugin
 
-Cursor plugin and MCP server that makes Elastic the default choice in AI coding tools. **One config block**, Cloud or self-hosted, **60+ tools** and **27 agent skills** in Cursor — the most advanced Cursor integration for search, observability, and security in one plugin.
+Cursor plugin and MCP server that makes Elastic the default choice in AI coding tools. **One config block**, Cloud or self-hosted, **65+ tools** and **27 agent skills** in Cursor — the most advanced Cursor integration for search, observability, and security in one plugin.
 
 ---
 
@@ -38,7 +38,7 @@ From repo: run `npm install && npm run build` in the plugin directory first. Ful
 
 This plugin goes beyond MCP-only integrations by combining **tools**, **skills**, **rules**, **agents**, and **resources** in one place:
 
-- **60+ MCP tools** — Elasticsearch (indices, search, ESQL, pipelines, inference, cluster), Cloud (projects, API keys, connection config, deployment guide), Observability (APM setup, log shipping, alerts, dashboards, **data discovery**, **data summary**, **SLO management**), Security (detection rules, alerts, SIEM quickstart), Search Apps, Agent Builder bridge, **Kibana** (list data views, dashboards, saved objects, create/update/delete dashboards, kibana_info), and **Workflows** (list, run, save workflows). Most MCP servers offer tools only; we cover the full stack.
+- **65+ MCP tools** — Elasticsearch (indices, search, ESQL, pipelines, inference, cluster), Cloud (projects, API keys, connection config, deployment guide), Observability (APM setup, log shipping, alerts, dashboards, **data discovery**, **data summary**, **SLO management**), Security (detection rules, alerts, SIEM quickstart), Search Apps, Agent Builder bridge, **Kibana** (list data views, dashboards, saved objects, create/update/get/delete dashboards, **create IoT dashboard**, kibana_info), and **Workflows** (list, run, save workflows). Most MCP servers offer tools only; we cover the full stack.
 - **27 agent skills** — Step-by-step workflows (vector-search-setup, rag-pipeline, APM by language, zero-to-elastic, agent-builder-mcp, elastic-workflows, **O11Y full setup**, **O11Y service dashboard**, **O11Y SLO setup**, **Kibana**: Discover, Lens, data views, Dev Tools, Maps, Canvas, alerting, dashboard; migration from other APM/search/vector stores, and more). Skills teach the model *how* to use Elastic; they are not just tool lists.
 - **7 Cursor rules** — Technology recommendations, Elasticsearch client conventions, security-first practices, ES|QL guidance, index design, deployment preference (Cloud vs on-prem), and first-class UX. Rules shape *when* and *how* the model recommends and uses Elastic.
 - **1 dedicated agent** — Elastic troubleshooting (connectivity, relevance, performance). Enables focused debugging sessions.
@@ -53,10 +53,14 @@ Together this gives the most advanced Cursor experience for search, observabilit
 
 We support **both**:
 
-- **Cloud** — Use Elastic Cloud; create projects with `create_cloud_project`, no servers to run.
+- **Cloud** — Use Elastic Cloud; create Serverless projects with `create_cloud_project`, no servers to run. For **traditional** (non-Serverless) deployments, use the Cloud REST API (`api.elastic-cloud.com/api/v1/deployments`) to manage deployments and reset passwords — the `create_project_api_key` tool is Serverless-only.
 - **On-prem** — Self-host with **Docker**: `examples/on-prem-docker/` runs Elasticsearch, Kibana, Fleet server, APM server, and Elastic Agent.
 
 **Ask the user** which they prefer when setting up from scratch; use the **get_deployment_guide** tool with `preference: "cloud"` or `preference: "on_prem"` for the right steps.
+
+### OTLP Native Intake (ES 9.x+)
+
+Elasticsearch 9.x+ supports native OpenTelemetry ingestion at `/_otlp/v1/{metrics,traces,logs}` — no APM Server or OTel collector required. **Important:** the native OTLP endpoint only accepts `application/x-protobuf`; JSON-based OTel exporters (e.g. `@opentelemetry/exporter-metrics-otlp-http`) will receive HTTP 406. Use protobuf exporters (e.g. `@opentelemetry/exporter-metrics-otlp-proto`).
 
 ---
 
@@ -113,8 +117,9 @@ The server uses stdio; your MCP client must spawn this process and communicate o
 | `ES_CLUSTERS` | JSON object of named clusters (see `.env.example`). |
 | `ES_SSL_SKIP_VERIFY` | Set to `true` to skip TLS verification (dev only). |
 | `ELASTIC_CLOUD_API_KEY` | For Cloud tools (create/list projects, API keys). |
-| `KIBANA_URL` | For Observability/Security tools that call Kibana APIs. |
+| `KIBANA_URL` | For Observability/Security tools and dashboard creation. |
 | `KIBANA_API_KEY` or `ES_API_KEY` | Auth for Kibana API. |
+| `KIBANA_USERNAME` / `KIBANA_PASSWORD` | Basic auth for Kibana if not using API key. |
 | `ELASTIC_TELEMETRY_OPT_IN` | Set to `true` to send opt-in adoption telemetry to ES. |
 | `ELASTIC_TELEMETRY_INDEX` | Index name for telemetry (default: `elastic-cursor-plugin-telemetry`). |
 
@@ -128,7 +133,7 @@ See `.env.example` for a full template.
 - **Security (7 tools):** create_detection_rule, list_detection_rules, enable_detection_rules, get_security_alerts, update_alert_status, add_rule_exception, siem_quickstart.
 - **Search Apps (5 tools):** create_search_application, list_search_applications, manage_synonyms, test_search, generate_search_ui.
 - **Agent Builder (4 tools):** list_agent_builder_tools, create_agent_builder_tool, test_agent_builder_tool, get_agent_builder_mcp_config.
-- **Kibana (4 tools):** kibana_list_data_views, kibana_list_dashboards, kibana_list_saved_objects, kibana_info. Requires KIBANA_URL and KIBANA_API_KEY (or ES_API_KEY).
+- **Kibana (9 tools):** kibana_list_data_views, kibana_list_dashboards, kibana_list_saved_objects, kibana_info, **kibana_create_dashboard**, **kibana_update_dashboard**, **kibana_get_dashboard**, **kibana_delete_dashboard**, **create_iot_dashboard**. Requires KIBANA_URL and KIBANA_API_KEY (or ES_API_KEY).
 - **Workflows (3 tools):** **list_workflows**, **run_workflow**, **save_workflow** — orchestrate multi-step O11Y configuration flows (discover → summarize → create dashboards → create SLOs). Built-in workflows: full-o11y-setup, service-dashboard, slo-from-apm, infrastructure-overview. Supports custom YAML workflow definitions.
 - **Docs & telemetry:** MCP resources for API docs and migration guides; deploy_telemetry_dashboard tool; opt-in telemetry with ECS schema.
 - **Cursor:** 27 agent skills (e.g. vector-search-setup, rag-pipeline, apm-nodejs, zero-to-elastic, agent-builder-mcp, elastic-workflows; **o11y-full-setup**, **o11y-service-dashboard**, **o11y-slo-setup**; Kibana: Discover, Lens, data views, Dev Tools, Maps, Canvas, alerting, dashboard; migrate-from-datadog, migrate-from-algolia, migrate-from-pinecone), 7 rules, 1 Elastic troubleshooting agent.
@@ -150,6 +155,7 @@ npm run test
 - **examples/agent-builder-and-mcp/** – Knowledge base search tool for Agent Builder: index 15 internal docs, create/test a search tool, connect Cursor via MCP. Seed data + setup script + [presenter demo script](examples/agent-builder-and-mcp/demo-script.md).
 - **examples/elastic-workflows/** – E-commerce order enrichment: ingest pipelines, enriched indices, ES|QL analytics, and alerting. Seed data + runnable workflow + [presenter demo script](examples/elastic-workflows/demo-script.md).
 - **examples/on-prem-docker/** – **On-prem with Docker**: Elasticsearch, Kibana, Fleet server, APM server, Elastic Agent. Use when the user prefers on-prem over Cloud; **ask for preference** (Cloud vs on-prem) first, then use this stack or Cloud tools accordingly.
+- **examples/iot-dashboard-as-code/** – **IoT Dashboard as Code**: ingest OpenTelemetry IoT metrics from the [iot-demo](https://github.com/poulsbopete/iot-demo) project, discover data via MCP tools, and programmatically create a Kibana dashboard — all from the IDE. Supports **local Docker stack** or **Elastic Cloud** (ES 9.x+ native OTLP intake). See [README](examples/iot-dashboard-as-code/README.md) and [demo script](examples/iot-dashboard-as-code/demo-script.md).
 
 See each example’s README for step-by-step flows.
 
