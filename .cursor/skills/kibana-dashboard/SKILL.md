@@ -114,7 +114,7 @@ Also set `coreApp.allowDynamicConfigOverrides: true` and `server.restrictInterna
 - **BUCKET granularity must match data density.** If data spans 1 minute, use `BUCKET(@timestamp, 10 second)`. If data spans hours, use `5 minute`. Too-large buckets collapse everything into one point.
 - **Rename dimension columns** for cleaner breakdown legends: `site = attributes.site.name` instead of raw `attributes.site.name`.
 - **Filter nulls** in chart queries with `WHERE field IS NOT NULL` to avoid empty data points.
-- **Use AVG for counter/gauge metrics**, not SUM — OTel counter metrics may not support SUM aggregation.
+- **OTel counter metrics (`counter_double`) reject all aggs** (AVG, SUM, MAX, MIN). Cast first: `EVAL c = TO_DOUBLE(counter_field) | STATS avg_c = AVG(c)`. This applies to fields with `time_series_metric: "counter"` (e.g. `metrics.sanitation.cycle_count`).
 - **Cross-device aggregations produce nulls** — when a metric only exists for one device type (e.g. `water.ph` for WaterSystem only), aggregating across all device types shows `null` for rows without that metric. This is expected.
 
 ### Common Mistakes to Avoid
@@ -128,7 +128,7 @@ Also set `coreApp.allowDynamicConfigOverrides: true` and `server.restrictInterna
 | `columns` array on datatable | Validation error | Use `rows` + `metrics` arrays |
 | `time_range: "now-1h"` on old data | Empty panels | Check actual data timestamps, set absolute range |
 | `BUCKET(@timestamp, 5 minute)` on 1-min data | Single flat point per series | Use smaller bucket (e.g. `10 second`) |
-| `SUM` on OTel counter metrics | ES|QL error | Use `AVG` or `MAX` |
+| `SUM`/`AVG`/`MAX` on OTel counter metrics | ES|QL verification_exception | Cast first: `EVAL c = TO_DOUBLE(field) \| STATS AVG(c)` |
 | Raw field names as ES|QL aliases | Ugly subtitles like `avg_val` | Use readable names: `` `L/min` ``, `` `pH` `` |
 | Missing `lens.enable_esql` feature flag | `esql` dataset rejected with "expected dataView or index" | Add flag to `kibana.yml` or Docker env |
 
