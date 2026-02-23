@@ -33,8 +33,7 @@ services:
     image: docker.elastic.co/kibana/kibana:9.4.0-SNAPSHOT
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - ELASTICSEARCH_SERVICEACCOUNTTOKEN=${KIBANA_SERVICE_TOKEN:-AAEAAWVsYXN0aWMva2liYW5hL2lvdC1kZW1vLXRva2VuOlJTdmxtaE5hU1ZpeWNZd0xEWGMtZkE}
       - coreApp.allowDynamicConfigOverrides=true
       - server.restrictInternalApis=false
       - feature_flags.overrides.dashboardAgent.enabled=true

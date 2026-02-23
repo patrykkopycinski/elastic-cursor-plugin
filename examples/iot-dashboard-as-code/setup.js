@@ -3,16 +3,24 @@
 /**
  * Setup script for the IoT Dashboard-as-Code example.
  *
- * Clones the iot-demo project, configures it for the local Elastic stack,
+ * Clones the iot-demo project, configures it for the local or Cloud Elastic stack,
  * installs dependencies, starts the dev server, and generates metric data.
  *
  * Usage:
- *   node setup.js                  # Full setup: clone → configure → install → start → generate data
+ *   node setup.js                       # Full setup: clone → configure → install → start → generate data
  *   node setup.js --generate-data-only  # Skip clone/install, just generate data (app must be running)
+ *
+ * Environment:
+ *   ES_URL              Elasticsearch endpoint (default: http://localhost:9200)
+ *   ELASTIC_PASSWORD    Password for the elastic user (default: changeme)
+ *
+ * For Cloud: set ES_URL to your Cloud ES endpoint (https://...) and ELASTIC_PASSWORD.
+ * The script auto-detects remote ES and routes OTLP to ES native intake, installing
+ * the protobuf exporter (ES OTLP rejects JSON with HTTP 406).
  */
 
 import { execSync, spawn } from 'node:child_process';
-import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -78,7 +86,18 @@ function cloneRepo() {
   execSync(`git clone ${IOT_DEMO_REPO} "${IOT_DEMO_DIR}"`, { stdio: 'inherit' });
 }
 
+function isRemoteEs() {
+  return ES_URL.startsWith('https://') && !ES_URL.includes('localhost');
+}
+
 async function detectOtlpEndpoint() {
+  // When targeting a remote (Cloud) ES, skip local service detection and use
+  // ES native OTLP directly. Local collectors (port 4318/8200) are unrelated.
+  if (isRemoteEs()) {
+    log(`Remote ES detected (${ES_URL}), using ES native OTLP intake`);
+    return ES_URL;
+  }
+
   // APM Server on 8200 (Docker Compose stack)
   try {
     const res = await fetch('http://localhost:8200', { signal: AbortSignal.timeout(2000) });
@@ -118,9 +137,38 @@ async function configureEnv() {
   log(`Wrote ${envPath}`);
 }
 
+function patchOtlpExporter() {
+  const otlpFile = resolve(IOT_DEMO_DIR, 'lib', 'otlpExport.ts');
+  if (!existsSync(otlpFile)) return;
+  let content = readFileSync(otlpFile, 'utf-8');
+  const from = '@opentelemetry/exporter-metrics-otlp-http';
+  const to = '@opentelemetry/exporter-metrics-otlp-proto';
+  if (content.includes(from)) {
+    content = content.replace(from, to);
+    writeFileSync(otlpFile, content);
+    log(`Patched ${otlpFile}: switched to proto exporter for ES native OTLP`);
+  }
+}
+
 function installDeps() {
   log('Installing iot-demo dependencies...');
   execSync('npm install', { cwd: IOT_DEMO_DIR, stdio: 'inherit' });
+
+  // ES native OTLP only accepts application/x-protobuf. The iot-demo ships
+  // with @opentelemetry/exporter-metrics-otlp-http (JSON-only), which gets
+  // HTTP 406 from ES. Install the proto exporter at a compatible version.
+  if (isRemoteEs()) {
+    log('Installing @opentelemetry/exporter-metrics-otlp-proto for ES native OTLP...');
+    const httpVer = execSync(
+      'node -e "console.log(require(\'@opentelemetry/exporter-metrics-otlp-http/package.json\').version)"',
+      { cwd: IOT_DEMO_DIR, encoding: 'utf-8' },
+    ).trim();
+    execSync(`npm install @opentelemetry/exporter-metrics-otlp-proto@${httpVer}`, {
+      cwd: IOT_DEMO_DIR,
+      stdio: 'inherit',
+    });
+    patchOtlpExporter();
+  }
 }
 
 function startDevServer() {

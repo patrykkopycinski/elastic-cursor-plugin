@@ -10,6 +10,8 @@ End-to-end example: spin up a local Elastic stack, ingest real OpenTelemetry IoT
 
 ## Quick Start
 
+### Option A: Local Docker Stack
+
 ```bash
 cd examples/iot-dashboard-as-code
 
@@ -27,6 +29,29 @@ bash setup.sh
 open http://localhost:5601
 # Login: elastic / changeme
 ```
+
+### Option B: Elastic Cloud
+
+No Docker needed — send IoT metrics directly to an Elastic Cloud deployment (ES 9.x+).
+
+```bash
+cd examples/iot-dashboard-as-code
+
+# 1. Set your Cloud ES credentials
+export ES_URL="https://your-deployment.es.region.gcp.elastic-cloud.com"
+export ELASTIC_PASSWORD="your-elastic-password"
+
+# 2. Clone iot-demo, configure it, install deps, generate data
+node setup.js
+
+# 3. Open Cursor, then ask the AI:
+#    "What indices have IoT data?"
+#    "Create a dashboard for the IoT metrics"
+```
+
+**Important for Cloud:** The iot-demo uses `@opentelemetry/exporter-metrics-otlp-proto` (protobuf).
+ES native OTLP intake (`/_otlp/v1/metrics`) only accepts `application/x-protobuf` — the JSON-only
+`@opentelemetry/exporter-metrics-otlp-http` exporter will get HTTP 406 errors.
 
 ## What Gets Created
 
@@ -99,6 +124,11 @@ rm -rf iot-demo
 - Check the iot-demo app is running: `curl http://localhost:3000`
 - Re-generate data: `node setup.js --generate-data-only`
 - Check ES indices: `curl -u elastic:changeme http://localhost:9200/_cat/indices/metrics-*`
+
+**No data appearing (Cloud)**
+- Verify the OTLP endpoint accepts protobuf: `curl -X POST "$ES_URL/_otlp/v1/metrics" -H "Content-Type: application/x-protobuf" -u "elastic:$ELASTIC_PASSWORD" -d ''` should return HTTP 200
+- If you get HTTP 406, the exporter is sending JSON. Switch from `@opentelemetry/exporter-metrics-otlp-http` to `@opentelemetry/exporter-metrics-otlp-proto` (must match your `@opentelemetry/sdk-metrics` major version)
+- Confirm setup.js detected "Remote ES" in its output — if it says "Detected OTel collector on port 4318", a local service intercepted OTLP traffic
 
 **Dashboard creation fails**
 - Ensure Kibana is healthy: `curl http://localhost:5601/api/status`

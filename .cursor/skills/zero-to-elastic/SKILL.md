@@ -19,7 +19,11 @@ Use when the user has no Elastic infrastructure and wants to go from zero to a w
 
 - Use `create_cloud_project` (with ELASTIC_CLOUD_API_KEY set) with name and region_id (e.g. us-east-1); or guide them to sign up at cloud.elastic.co and create a deployment.
 - Use `get_connection_config` to generate the client snippet for their language (node, python, java, go, dotnet).
-- Use `create_project_api_key` if they need a scoped key.
+- Use `create_project_api_key` if they need a scoped key (Serverless projects only).
+- For **traditional (non-Serverless) deployments**: `create_project_api_key` does NOT work. Instead:
+  - Reset the `elastic` password via Cloud API: `POST https://api.elastic-cloud.com/api/v1/deployments/{id}/elasticsearch/{ref_id}/_reset-password` with the `ELASTIC_CLOUD_API_KEY` header.
+  - Find deployment ID with `GET https://api.elastic-cloud.com/api/v1/deployments` (look for the deployment by name or ES cluster ID in the URL alias).
+  - Use `ref_id: "main-elasticsearch"` for the ES resource ref.
 
 **If on-prem:**
 
@@ -33,6 +37,11 @@ Use when the user has no Elastic infrastructure and wants to go from zero to a w
 - Create an index with `create_index`; index sample data with `index_document` or `bulk_index`.
 - Run a first `search` or `esql_query` to validate connectivity.
 - For APM (Cloud or on-prem): use `setup_apm` with the appropriate server URL (Cloud APM URL or on-prem http://localhost:8200).
+
+### OTLP Native Intake (ES 9.x+)
+- ES 9.x+ supports native OTLP at `/_otlp/v1/{metrics,traces,logs}` — no APM Server or OTel collector required.
+- **Critical**: ES native OTLP only accepts `application/x-protobuf`. Use proto-based OTel exporters, not JSON/HTTP variants.
+- When auto-detecting OTLP endpoints, skip local service detection (ports 4318, 8200) if `ES_URL` points to a remote/Cloud host — otherwise unrelated local services intercept traffic.
 
 ## 4. Validate
 

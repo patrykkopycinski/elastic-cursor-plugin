@@ -11,3 +11,11 @@ globs: *
 - Use the **get_deployment_guide** tool with the user’s choice (`preference: "cloud"` or `preference: "on_prem"`) to return the right steps.
 - For on-prem, deployment is done via **Docker** (docker-compose in this repo); do not assume a non-Docker or manual install unless the user asks for it.
 - If the user already has a cluster (Cloud or self-hosted), skip the preference question and use their existing ES_URL and credentials.
+
+## Cloud API Notes (Traditional Deployments)
+
+- The MCP tools `create_cloud_project`, `create_project_api_key`, and `list_cloud_projects` are for **Serverless** projects only. They return empty results for traditional deployments.
+- For **traditional Cloud deployments**, use the REST API directly:
+  - List deployments: `GET https://api.elastic-cloud.com/api/v1/deployments` (with `Authorization: ApiKey <ELASTIC_CLOUD_API_KEY>`)
+  - Reset `elastic` password: `POST https://api.elastic-cloud.com/api/v1/deployments/{deployment_id}/elasticsearch/main-elasticsearch/_reset-password`
+  - The deployment ID can be found from the URL alias (e.g. `a051af` in `my-observability-deployment-a051af.es...`).

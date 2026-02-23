@@ -8,6 +8,7 @@
  */
 
 import { kibanaFetch, getKibanaUrl } from './types.js';
+import { enableFeatureFlagsViaCloud } from './cloud-feature-flags.js';
 
 interface ToolResult {
   content: Array<{ type: 'text'; text: string }>;
@@ -36,21 +37,28 @@ export async function enableFeatureFlags(): Promise<string[]> {
     'lens.enable_esql': true,
   };
 
-  const result = await kibanaFetch('/internal/core/_settings', {
+  const internalResult = await kibanaFetch('/internal/core/_settings', {
     method: 'PUT',
     body: { 'feature_flags.overrides': flags },
     headers: { 'Elastic-Api-Version': '1' },
   });
 
-  if (result.ok) {
-    notes.push('Feature flags enabled (dashboardAgent.enabled, lens.apiFormat, lens.enable_esql).');
-  } else {
-    notes.push(
-      'Could not enable feature flags dynamically (coreApp.allowDynamicConfigOverrides may be false). ' +
-      'Add to kibana.yml: feature_flags.overrides: { lens.apiFormat: true, dashboardAgent.enabled: true, lens.enable_esql: true }'
-    );
+  if (internalResult.ok) {
+    notes.push('Feature flags enabled via Kibana internal API.');
+    return notes;
   }
 
+  if (process.env.ELASTIC_CLOUD_API_KEY) {
+    const cloudNotes = await enableFeatureFlagsViaCloud();
+    notes.push(...cloudNotes);
+    return notes;
+  }
+
+  notes.push(
+    'Could not enable feature flags dynamically. ' +
+    'Either set coreApp.allowDynamicConfigOverrides: true in kibana.yml, ' +
+    'or set ELASTIC_CLOUD_API_KEY for automatic Cloud configuration.'
+  );
   return notes;
 }
 

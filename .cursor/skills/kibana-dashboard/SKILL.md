@@ -38,7 +38,19 @@ Also set `coreApp.allowDynamicConfigOverrides: true` and `server.restrictInterna
 ### Grid System
 - 48-column layout, infinite rows. Full-width = `w:48`, half = `w:24`, third = `w:16`, quarter = `w:12`.
 - Above-the-fold on 1080p ≈ 20–24 rows. Aim for 8–12 panels above the fold.
-- Heights: KPI metrics `h:8`, charts `h:12–14`, gauge `h:10–12`, tables `h:10`, markdown headers `h:4`.
+- Heights: KPI metrics `h:6`, charts `h:12–14`, gauge `h:10–12`, tables `h:10`, markdown headers `h:3–4`.
+
+### Dashboard Design Patterns
+
+**KPI row** (top of dashboard): 6 metric panels across (`w:8` each) with `h:6`. Use ROUND() and readable column aliases so subtitles show "Tank Level (%)" not "avg_val".
+
+**Section headers**: Use markdown panels (`h:3`) with `### 🏭 Section Name` to group related charts. Organize by domain (e.g. Chemical Systems, Water Systems, Sanitation).
+
+**Chart grouping**: 3 charts per row at `w:16` each. Use consistent chart types within a section (line for precision, area for flow/continuous, bar_stacked for volume).
+
+**Summary tables**: Place at the bottom. Split into side-by-side tables (`w:24` each) — e.g. "Metrics by Site" + "Metrics by Device Type" — rather than one huge table.
+
+**Time range**: Always check actual data timestamps before setting `time_from`. For demo data that spans minutes, use `now-1h`; for live data, `now-24h` is typical. Match BUCKET() interval to data density (30s for 2-min data, 5min for hourly data).
 
 ### Panel Types and Schema Rules
 

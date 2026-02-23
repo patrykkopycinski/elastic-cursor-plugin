@@ -412,7 +412,9 @@ Above-the-fold on 1080p ≈ 20-24 rows. Design for density: 8-12 panels above th
 - **datatable panels (ES|QL):** dataset at panel level, metrics with {operation:"value", column}, rows with {operation:"value", column}
 - **ES|QL y-axis columns in xy layers do NOT support "label" — the column name from the query is used.
 
-Requires KIBANA_URL and auth (KIBANA_API_KEY, or KIBANA_USERNAME + KIBANA_PASSWORD).`;
+Requires KIBANA_URL and auth (KIBANA_API_KEY, or KIBANA_USERNAME + KIBANA_PASSWORD).
+
+**Cloud support:** When ELASTIC_CLOUD_API_KEY is set, automatically configures required feature flags via the Cloud Deployments API if the internal Kibana API is unavailable. Set ELASTIC_CLOUD_DEPLOYMENT_ID explicitly or let it auto-discover from ES_CLOUD_ID.`;
 
 export function registerCreateDashboard(server: ToolRegistrationContext): void {
   server.registerTool(
