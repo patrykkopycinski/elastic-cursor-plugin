@@ -1,0 +1,72 @@
+[
+  {
+    "product_id": "PROD-001",
+    "name": "Wireless Bluetooth Headphones",
+    "category": "Electronics",
+    "price": 79.99,
+    "warehouse_location": "US-WEST-1"
+  },
+  {
+    "product_id": "PROD-002",
+    "name": "Organic Green Tea (100 bags)",
+    "category": "Grocery",
+    "price": 12.50,
+    "warehouse_location": "US-EAST-2"
+  },
+  {
+    "product_id": "PROD-003",
+    "name": "Standing Desk Converter",
+    "category": "Office",
+    "price": 249.00,
+    "warehouse_location": "US-WEST-1"
+  },
+  {
+    "product_id": "PROD-004",
+    "name": "Running Shoes (Men)",
+    "category": "Apparel",
+    "price": 129.95,
+    "warehouse_location": "EU-CENTRAL-1"
+  },
+  {
+    "product_id": "PROD-005",
+    "name": "USB-C Hub 7-in-1",
+    "category": "Electronics",
+    "price": 34.99,
+    "warehouse_location": "US-EAST-2"
+  },
+  {
+    "product_id": "PROD-006",
+    "name": "Stainless Steel Water Bottle",
+    "category": "Home",
+    "price": 24.99,
+    "warehouse_location": "US-WEST-1"
+  },
+  {
+    "product_id": "PROD-007",
+    "name": "Mechanical Keyboard (TKL)",
+    "category": "Electronics",
+    "price": 149.00,
+    "warehouse_location": "EU-CENTRAL-1"
+  },
+  {
+    "product_id": "PROD-008",
+    "name": "Yoga Mat Premium",
+    "category": "Sports",
+    "price": 45.00,
+    "warehouse_location": "US-EAST-2"
+  },
+  {
+    "product_id": "PROD-009",
+    "name": "4K Webcam with Microphone",
+    "category": "Electronics",
+    "price": 189.00,
+    "warehouse_location": "US-WEST-1"
+  },
+  {
+    "product_id": "PROD-010",
+    "name": "Leather Laptop Sleeve 14\"",
+    "category": "Office",
+    "price": 59.99,
+    "warehouse_location": "EU-CENTRAL-1"
+  }
+]

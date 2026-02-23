@@ -1,0 +1,107 @@
+[
+  {
+    "id": "kb-001",
+    "title": "Production Deployment Checklist",
+    "content": "Before deploying to production, verify all pre-flight checks. Run the full test suite with `npm run test:integration`. Confirm that database migrations have been applied to the staging environment and validated. Check that environment variables are set correctly in the deployment manifest -- pay special attention to API keys and database connection strings.\n\nEnsure the CI pipeline is green on the release branch. Tag the release using semantic versioning (e.g. v2.4.1). Notify the on-call team in #deployments before starting the rollout.\n\nRollback plan: keep the previous container image tagged as `latest-stable`. If health checks fail within 10 minutes of deploy, revert to that image and page the platform team.",
+    "tags": ["deployment", "production", "checklist"],
+    "last_updated": "2025-02-15"
+  },
+  {
+    "id": "kb-002",
+    "title": "Elasticsearch Cluster Sizing Guide",
+    "content": "For a search workload under 50 million documents, start with a 3-node cluster (each node: 8 GB RAM, 4 vCPUs, 200 GB SSD). Allocate roughly 50% of available RAM to the JVM heap and leave the rest for OS file cache.\n\nFor write-heavy workloads (more than 10,000 docs/second), add dedicated ingest nodes and use bulk indexing with a batch size of 1,000-5,000 documents. Monitor thread pool rejections and adjust queue sizes if needed.\n\nFor production, always use at least 3 master-eligible nodes to avoid split-brain. Use dedicated coordinating nodes if query concurrency exceeds 100 requests per second.",
+    "tags": ["elasticsearch", "infrastructure", "sizing"],
+    "last_updated": "2025-02-10"
+  },
+  {
+    "id": "kb-003",
+    "title": "API Authentication Reference",
+    "content": "All API endpoints require authentication via Bearer token or API key. To obtain a token, POST to /api/auth/token with your client_id and client_secret in the request body. Tokens expire after 1 hour; use the refresh_token grant to renew without re-authenticating.\n\nAPI keys are scoped to specific resources. Create them in the admin console under Settings > API Keys. Each key has a prefix (e.g. `pk_live_`) that indicates its environment. Never use production keys in development.\n\nRate limits: 1,000 requests per minute for standard tier, 10,000 for enterprise. Exceeding the limit returns HTTP 429 with a Retry-After header.",
+    "tags": ["api", "authentication", "security"],
+    "last_updated": "2025-02-18"
+  },
+  {
+    "id": "kb-004",
+    "title": "Incident Response Runbook",
+    "content": "When an alert fires, the on-call engineer has 15 minutes to acknowledge. Open the incident channel in Slack (#incidents) and post the alert summary. Assign a severity: SEV1 (customer-facing outage), SEV2 (degraded service), SEV3 (internal tooling issue).\n\nFor SEV1: page the engineering lead and notify the VP of Engineering. Start a war room video call. Update the status page within 30 minutes. All changes during the incident must be tracked in the incident ticket.\n\nPost-incident: schedule a blameless retrospective within 48 hours. Document the timeline, root cause, and action items. Action items must have owners and due dates.",
+    "tags": ["incident", "runbook", "operations"],
+    "last_updated": "2025-01-28"
+  },
+  {
+    "id": "kb-005",
+    "title": "Database Migration Procedures",
+    "content": "All schema changes go through the migration framework. Create a new migration file with `npm run db:migrate:create -- --name=add_users_index`. Write both the up and down functions. Migrations must be idempotent.\n\nTest migrations on a snapshot of production data before applying to staging. Large table alterations (over 1 million rows) should use online DDL (pt-online-schema-change for MySQL, or pg_repack for PostgreSQL) to avoid locking.\n\nNever drop columns in the same release that stops writing to them. Use a two-phase approach: first deploy code that stops writing, then deploy the migration that drops the column.",
+    "tags": ["database", "migration", "procedures"],
+    "last_updated": "2025-02-12"
+  },
+  {
+    "id": "kb-006",
+    "title": "Kubernetes Pod Troubleshooting",
+    "content": "If a pod is in CrashLoopBackOff, start with `kubectl logs <pod> --previous` to see the last crash output. Common causes: missing environment variables, failed health checks, or OOMKilled (check with `kubectl describe pod`).\n\nFor OOMKilled pods, review the container memory limits in the deployment spec. Consider increasing limits or optimizing the application memory footprint. Use `kubectl top pod` to see current usage.\n\nFor image pull errors, verify the image tag exists in the registry and that the cluster has valid pull credentials (imagePullSecrets). For Init container failures, check each init container log separately.",
+    "tags": ["kubernetes", "troubleshooting", "infrastructure"],
+    "last_updated": "2025-02-08"
+  },
+  {
+    "id": "kb-007",
+    "title": "CI/CD Pipeline Configuration",
+    "content": "The CI pipeline runs on every push to a pull request branch. Stages: lint, unit tests, integration tests, build, security scan. The pipeline definition lives in .buildkite/pipeline.yml.\n\nTo add a new test stage, append a step with the appropriate Docker image and command. Tests run in parallel by default; use `depends_on` to enforce ordering. Cache node_modules with the pipeline cache plugin keyed on package-lock.json hash.\n\nDeployment is triggered by merging to main. The CD pipeline builds the Docker image, pushes to ECR, and updates the Kubernetes deployment. Canary deployments are enabled for production: 10% traffic for 15 minutes before full rollout.",
+    "tags": ["ci-cd", "pipeline", "automation"],
+    "last_updated": "2025-02-20"
+  },
+  {
+    "id": "kb-008",
+    "title": "Logging Standards and Best Practices",
+    "content": "Use structured JSON logging in all services. Required fields: timestamp (ISO 8601), level (debug/info/warn/error), message, service_name, trace_id. Use a correlation ID (trace_id) to link logs across services in a single request chain.\n\nLog levels: DEBUG for development diagnostics, INFO for normal operations, WARN for recoverable issues, ERROR for failures requiring attention. Never log sensitive data (passwords, tokens, PII). Use field redaction middleware.\n\nShip logs to Elasticsearch via Filebeat or the OpenTelemetry collector. Use index lifecycle management with a 30-day hot tier and 90-day warm tier. Set up Kibana dashboards for error rate and latency percentiles.",
+    "tags": ["logging", "observability", "standards"],
+    "last_updated": "2025-02-14"
+  },
+  {
+    "id": "kb-009",
+    "title": "Feature Flag Management",
+    "content": "Feature flags are managed through the internal flag service at flags.internal.example.com. Create flags in the admin UI with a descriptive key (e.g. `enable_new_checkout_flow`). Each flag has environments: development, staging, production.\n\nIn code, use the SDK: `if (flags.isEnabled('enable_new_checkout_flow')) { ... }`. The SDK caches flag state locally with a 60-second TTL. For server-side rendering, pre-fetch flags in the request middleware.\n\nClean up flags within 2 sprints of full rollout. Stale flags increase complexity and testing surface. The flag service dashboard shows last-evaluated dates to identify candidates for removal.",
+    "tags": ["feature-flags", "release", "development"],
+    "last_updated": "2025-02-05"
+  },
+  {
+    "id": "kb-010",
+    "title": "Monitoring and Alerting Setup",
+    "content": "Every service must export RED metrics (Rate, Errors, Duration) via Prometheus or OpenTelemetry. Expose a /metrics endpoint on port 9090. The metrics collector scrapes every 15 seconds.\n\nCritical alerts: error rate above 5% for 5 minutes (SEV1), p99 latency above 2 seconds for 10 minutes (SEV2), pod restart count above 3 in 15 minutes (SEV2). Configure alert routing in the alerting rules file.\n\nDashboards live in Kibana. Each service has a standard dashboard template with panels for request rate, error rate, latency histogram, and resource utilization. Clone the template and customize for service-specific metrics.",
+    "tags": ["monitoring", "alerting", "observability"],
+    "last_updated": "2025-02-17"
+  },
+  {
+    "id": "kb-011",
+    "title": "Secrets Management Policy",
+    "content": "All secrets (API keys, database credentials, certificates) must be stored in the secrets manager (Vault or AWS Secrets Manager). Never commit secrets to version control. Use .env.example files with placeholder values.\n\nApplications retrieve secrets at startup via the secrets SDK or environment variable injection from the orchestrator. Secrets are rotated quarterly; the rotation process is automated for database passwords and API keys.\n\nFor local development, use the dev-secrets CLI tool to sync a local .env file from the development secrets namespace. Access is scoped by team: each team can only read secrets in their namespace.",
+    "tags": ["security", "secrets", "policy"],
+    "last_updated": "2025-02-01"
+  },
+  {
+    "id": "kb-012",
+    "title": "GraphQL API Design Guidelines",
+    "content": "Follow the Relay specification for pagination (connections with edges and pageInfo). Use cursor-based pagination over offset-based for stable results. Name mutations as verb-noun pairs: createUser, updateOrder, deleteComment.\n\nAll queries must have a maximum depth of 10 and a complexity limit of 1,000. Use persisted queries in production to prevent arbitrary query execution. Schema changes must be backward-compatible; deprecate fields with @deprecated before removal.\n\nError handling: return errors in the errors array with a code field (e.g. NOT_FOUND, UNAUTHORIZED, VALIDATION_ERROR). Include a user-friendly message and a developer-facing details field for debugging.",
+    "tags": ["graphql", "api", "design"],
+    "last_updated": "2025-01-30"
+  },
+  {
+    "id": "kb-013",
+    "title": "Load Testing Procedures",
+    "content": "Run load tests before every major release using k6 or Locust. Test scenarios: baseline (normal traffic), peak (2x baseline), and stress (ramp until failure). Store test scripts in the /load-tests directory.\n\nTarget SLOs: p95 latency under 500ms at baseline, under 1s at peak. Error rate under 0.1% at baseline. If SLOs are breached, file a performance ticket and block the release until resolved.\n\nRun tests against a dedicated load-testing environment that mirrors production sizing. Never run load tests against staging or production without approval. Results are archived in the performance-benchmarks S3 bucket.",
+    "tags": ["testing", "performance", "procedures"],
+    "last_updated": "2025-02-11"
+  },
+  {
+    "id": "kb-014",
+    "title": "Service Mesh and Network Policies",
+    "content": "All inter-service communication goes through the service mesh (Istio). mTLS is enforced between all services. External traffic enters through the ingress gateway with TLS termination.\n\nNetwork policies restrict pod-to-pod communication. By default, pods cannot communicate with pods in other namespaces. Explicitly allow cross-namespace traffic by adding a NetworkPolicy resource. The security team reviews all cross-namespace policy requests.\n\nRetry and circuit-breaker policies are configured in DestinationRules. Default: 3 retries with exponential backoff, circuit breaker trips after 5 consecutive 5xx errors. Customize per-service if needed.",
+    "tags": ["networking", "security", "infrastructure"],
+    "last_updated": "2025-02-06"
+  },
+  {
+    "id": "kb-015",
+    "title": "Onboarding New Team Members",
+    "content": "New engineers complete onboarding in their first week. Day 1: set up development environment using the bootstrap script (`./scripts/bootstrap.sh`), get access to GitHub, Slack, and the secrets namespace. Day 2: pair with a buddy on a starter ticket.\n\nRequired reading: this knowledge base (especially deployment, incident response, and logging articles), the architecture decision records in /docs/adr, and the team handbook in Notion. Complete the security awareness training within the first 2 weeks.\n\nFirst PR should be merged within 5 business days. The buddy is responsible for code review and context. Schedule a 1:1 with the tech lead at the end of week 1 to discuss goals and clarify any questions about the codebase.",
+    "tags": ["onboarding", "team", "process"],
+    "last_updated": "2025-02-19"
+  }
+]

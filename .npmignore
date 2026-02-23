@@ -1,0 +1,34 @@
+# Source and dev (publish only built packages and metadata)
+src
+**/src
+**/*.ts
+!**/*.d.ts
+tsconfig.json
+tsup.config.ts
+**/tsconfig*.json
+**/vitest.config.ts
+**/tests
+**/*.test.ts
+**/*.spec.ts
+
+# Dev and tooling
+.cursor
+.cursor-plugin
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.log
+coverage
+node_modules
+.DS_Store
+*.md
+!README.md
+
+# OpenSpec and internal
+openspec
+docs/PRESENTATION.md
+docs/DEMO_VIDEO_SCRIPT.md
+docs/DEMO_RUNBOOK.md
+VERIFICATION.md

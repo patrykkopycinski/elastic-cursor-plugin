@@ -1,0 +1,8 @@
+{
+  "name": "elastic-developer-experience",
+  "version": "0.1.0",
+  "description": "Elasticsearch, Observability, and Security tools, skills, and rules for AI-assisted development",
+  "author": "Elastic",
+  "license": "Apache-2.0",
+  "mcp": "mcp.json"
+}

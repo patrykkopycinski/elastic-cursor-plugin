@@ -1,0 +1,12 @@
+---
+description: First-class UX — one config block, fast time-to-first-value, copy-paste snippets
+globs: *
+---
+
+# First-class developer experience
+
+- **One config block:** When guiding MCP setup, give a single copy-paste JSON block for Cursor/Claude with placeholders (ES_URL, ES_API_KEY or ES_USERNAME/ES_PASSWORD). No scattered steps.
+- **Ask once for deployment:** When the user has no cluster, ask a single question: "Do you prefer Cloud (managed) or on-prem (Docker)?" Then use get_deployment_guide and the appropriate path. Do not ask multiple preference questions.
+- **Time-to-first-value:** Aim for under 2 minutes to first search: Cloud = create project (or use existing URL + API key) → paste into MCP env → run list_indices or search. On-prem = docker compose up -d → paste URL + credentials into MCP env → run list_indices or search.
+- **Copy-paste-ready output:** When returning connection config, code snippets, or env vars, return them in a form the user can paste directly (e.g. get_connection_config, create_cloud_project response). Mention "Copy this" or "Paste into your MCP env" when relevant.
+- **Credentials clarity:** Tell the user where to get ES_URL and ES_API_KEY (Cloud console, or Kibana after Docker) so they are never stuck.

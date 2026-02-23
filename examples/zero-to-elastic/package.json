@@ -1,0 +1,14 @@
+{
+  "name": "zero-to-elastic-bookstore",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js",
+    "seed": "node -e \"fetch('http://localhost:3000/seed', {method:'POST'}).then(r=>r.json()).then(console.log)\""
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.17.0",
+    "express": "^4.21.0"
+  }
+}

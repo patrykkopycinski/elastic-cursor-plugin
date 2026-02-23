@@ -1,0 +1,12 @@
+{
+  "name": "elastic-workflows-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node run-workflow.js"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.17.0"
+  }
+}

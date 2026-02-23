@@ -1,0 +1,122 @@
+[
+  {
+    "title": "Interstellar",
+    "year": 2014,
+    "director": "Christopher Nolan",
+    "genres": ["sci-fi", "drama", "adventure"],
+    "plot": "A former NASA pilot is recruited for a last-chance mission through a wormhole near Saturn to find a habitable planet for humanity. As Earth's crops fail and dust storms ravage civilization, the crew confronts time dilation, betrayal, and the limits of human endurance across alien worlds. The story weaves gravitational physics and a father-daughter bond into an epic about survival and sacrifice.",
+    "rating": 8.7
+  },
+  {
+    "title": "The Shawshank Redemption",
+    "year": 1994,
+    "director": "Frank Darabont",
+    "genres": ["drama"],
+    "plot": "A banker sentenced to life in Shawshank prison for a murder he did not commit befriends a fellow inmate over two decades. Through quiet resilience, financial ingenuity, and an elaborate escape plan tunneled behind a poster, he reclaims his freedom. The film examines hope, institutional corruption, and the cost of endurance inside an unforgiving system.",
+    "rating": 9.3
+  },
+  {
+    "title": "Spirited Away",
+    "year": 2001,
+    "director": "Hayao Miyazaki",
+    "genres": ["animation", "fantasy", "adventure"],
+    "plot": "A ten-year-old girl stumbles into a spirit world ruled by a witch who runs a bathhouse for gods and monsters. To rescue her parents, who have been transformed into pigs, she must work in the bathhouse and navigate its strange customs. The journey is a coming-of-age fable about courage, identity, and the tension between greed and generosity.",
+    "rating": 8.6
+  },
+  {
+    "title": "The Dark Knight",
+    "year": 2008,
+    "director": "Christopher Nolan",
+    "genres": ["action", "thriller", "crime"],
+    "plot": "Batman, Lieutenant Gordon, and district attorney Harvey Dent form an alliance to dismantle organized crime in Gotham City. Their plans unravel when the Joker, an agent of chaos with no clear motive, forces each of them into impossible moral choices. The escalating conflict transforms Dent into a villain and tests whether Gotham deserves a hero who operates outside the law.",
+    "rating": 9.0
+  },
+  {
+    "title": "Arrival",
+    "year": 2016,
+    "director": "Denis Villeneuve",
+    "genres": ["sci-fi", "drama"],
+    "plot": "A linguist is recruited by the military to communicate with alien beings whose ships have landed at twelve sites around the globe. As she deciphers their circular written language, she begins experiencing non-linear perceptions of time. The film explores how language shapes thought, and whether knowing the future changes the choices we make in the present.",
+    "rating": 7.9
+  },
+  {
+    "title": "Parasite",
+    "year": 2019,
+    "director": "Bong Joon-ho",
+    "genres": ["thriller", "drama", "comedy"],
+    "plot": "A poor family in Seoul schemes their way into employment with a wealthy household by posing as unrelated, highly qualified workers. The arrangement unravels when they discover a hidden secret in the basement of the mansion. Class resentment, architectural metaphor, and darkly comic twists drive the story toward an explosion of violence that neither family can control.",
+    "rating": 8.5
+  },
+  {
+    "title": "Mad Max: Fury Road",
+    "year": 2015,
+    "director": "George Miller",
+    "genres": ["action", "sci-fi", "adventure"],
+    "plot": "In a post-apocalyptic wasteland ruled by a tyrant who controls the water supply, a war captain defects with his enslaved wives in a fortified tanker truck. A drifter named Max, captured and used as a blood donor, joins their desperate run across the desert. The entire film is essentially one extended chase through sandstorms, canyons, and warring convoys.",
+    "rating": 8.1
+  },
+  {
+    "title": "The Silence of the Lambs",
+    "year": 1991,
+    "director": "Jonathan Demme",
+    "genres": ["thriller", "crime", "horror"],
+    "plot": "An FBI trainee seeks the help of an imprisoned cannibalistic psychiatrist to catch a serial killer who skins his victims. The psychiatrist, Hannibal Lecter, offers cryptic clues in exchange for personal revelations about the trainee's past. Their exchanges become a psychological chess match as the killer closes in on his next victim and Lecter engineers his own escape.",
+    "rating": 8.6
+  },
+  {
+    "title": "WALL-E",
+    "year": 2008,
+    "director": "Andrew Stanton",
+    "genres": ["animation", "sci-fi", "family"],
+    "plot": "A small waste-compacting robot is the last functioning machine on an abandoned, trash-covered Earth. When a sleek reconnaissance probe named EVE arrives searching for signs of plant life, WALL-E follows her back to a luxury spaceship where obese humans have lived for seven hundred years. The film is a love story wrapped in environmental satire, told mostly without dialogue.",
+    "rating": 8.4
+  },
+  {
+    "title": "No Country for Old Men",
+    "year": 2007,
+    "director": "Joel Coen, Ethan Coen",
+    "genres": ["thriller", "crime", "drama"],
+    "plot": "A hunter stumbles on the aftermath of a drug deal gone wrong in the Texas desert and takes a satchel of two million dollars. A remorseless hitman with a captive bolt pistol tracks him across the border while an aging sheriff tries to make sense of the escalating violence. The story is a meditation on fate, aging, and the impossibility of outrunning the consequences of a single decision.",
+    "rating": 8.2
+  },
+  {
+    "title": "Inception",
+    "year": 2010,
+    "director": "Christopher Nolan",
+    "genres": ["sci-fi", "action", "thriller"],
+    "plot": "A thief who specializes in extracting secrets from people's dreams is offered a chance to have his criminal record erased if he can perform inception: planting an idea deep in a target's subconscious. He assembles a team and constructs layered dream worlds, each with its own time dilation and physics. The mission risks trapping them in limbo, a formless subconscious state from which they may never wake.",
+    "rating": 8.8
+  },
+  {
+    "title": "The Grand Budapest Hotel",
+    "year": 2014,
+    "director": "Wes Anderson",
+    "genres": ["comedy", "drama", "adventure"],
+    "plot": "A legendary concierge at a prestigious European hotel between the wars is framed for murder after a wealthy dowager dies and leaves him a priceless painting. With the help of his lobby boy, he flees across borders, breaks out of prison, and races rival heirs to clear his name. The film is a nested story-within-a-story about loyalty, nostalgia, and the fading elegance of a vanished world.",
+    "rating": 8.1
+  },
+  {
+    "title": "Gravity",
+    "year": 2013,
+    "director": "Alfonso Cuaron",
+    "genres": ["sci-fi", "thriller", "drama"],
+    "plot": "A medical engineer on her first shuttle mission and a veteran astronaut are stranded in orbit after debris from a satellite destruction destroys their shuttle. With dwindling oxygen and no communication with Earth, they must navigate between space stations using only a jetpack and inertia. The film is a survival thriller set against the silence and vastness of low Earth orbit.",
+    "rating": 7.7
+  },
+  {
+    "title": "Get Out",
+    "year": 2017,
+    "director": "Jordan Peele",
+    "genres": ["horror", "thriller"],
+    "plot": "A young Black photographer visits his white girlfriend's affluent family estate for a weekend, where the overly accommodating atmosphere conceals something sinister. The family's Black servants behave strangely, and a late-night hypnosis session reveals the household's true intentions. The film uses body horror and social satire to examine race relations, liberal guilt, and the commodification of Black identity.",
+    "rating": 7.7
+  },
+  {
+    "title": "The Godfather",
+    "year": 1972,
+    "director": "Francis Ford Coppola",
+    "genres": ["crime", "drama"],
+    "plot": "The aging patriarch of a New York crime family transfers control to his reluctant youngest son, who transforms from a decorated war hero into a ruthless mafia boss. A botched assassination attempt, a war with rival families, and betrayals from within the organization drive the son deeper into the criminal world. The film charts the corruption of idealism by power and the inescapable gravity of family loyalty.",
+    "rating": 9.2
+  }
+]

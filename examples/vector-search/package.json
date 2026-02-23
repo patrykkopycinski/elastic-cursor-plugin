@@ -1,0 +1,14 @@
+{
+  "name": "vector-search-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node app.js",
+    "seed": "curl -s -X POST http://localhost:3000/seed | jq"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.17.0",
+    "express": "^4.21.0"
+  }
+}

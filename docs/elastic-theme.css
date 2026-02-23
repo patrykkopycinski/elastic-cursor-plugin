@@ -1,0 +1,370 @@
+/* @theme elastic */
+
+@import 'default';
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --elastic-blue: #0B64DD;
+  --elastic-blue-dark: #1750BA;
+  --elastic-teal: #008B87;
+  --elastic-pink: #BC1E70;
+  --elastic-navy: #07101F;
+  --elastic-navy-mid: #111C2C;
+  --elastic-navy-text: #1D2A3E;
+  --elastic-subdued: #516381;
+  --elastic-light-bg: #F6F9FC;
+  --elastic-border: #E3E8F2;
+  --elastic-success: #008A5E;
+  --elastic-warning: #FACB3D;
+  --elastic-danger: #C61E25;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+section {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--elastic-light-bg);
+  color: var(--elastic-navy-text);
+  padding: 60px 70px;
+  line-height: 1.5;
+}
+
+section::after {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--elastic-subdued);
+}
+
+h1 {
+  font-weight: 800;
+  color: var(--elastic-navy-mid);
+  font-size: 2.2em;
+  margin-bottom: 0.3em;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-weight: 700;
+  color: var(--elastic-navy-mid);
+  font-size: 1.6em;
+  margin-bottom: 0.4em;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-weight: 600;
+  color: var(--elastic-blue);
+  font-size: 1.2em;
+}
+
+strong {
+  color: var(--elastic-navy-mid);
+  font-weight: 700;
+}
+
+a {
+  color: var(--elastic-blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(11, 100, 221, 0.3);
+}
+
+a:hover {
+  border-bottom-color: var(--elastic-blue);
+}
+
+code {
+  background: #E8F1FF;
+  color: var(--elastic-blue-dark);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+pre {
+  background: var(--elastic-navy);
+  color: #dce6f5;
+  border-radius: 10px;
+  padding: 24px;
+  font-size: 0.75em;
+  line-height: 1.6;
+  box-shadow: 0 4px 20px rgba(7, 16, 31, 0.15);
+}
+
+pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+blockquote {
+  border-left: 4px solid var(--elastic-blue);
+  padding-left: 20px;
+  margin-left: 0;
+  color: var(--elastic-subdued);
+  font-style: italic;
+}
+
+ul,
+ol {
+  margin-left: 0.2em;
+}
+
+li {
+  margin-bottom: 0.35em;
+}
+
+li::marker {
+  color: var(--elastic-blue);
+  font-weight: 700;
+}
+
+table {
+  font-size: 0.8em;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  box-shadow: 0 1px 6px rgba(7, 16, 31, 0.08);
+}
+
+thead th {
+  background: var(--elastic-blue);
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
+  border: none;
+}
+
+tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--elastic-border);
+  background: #fff;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:nth-child(even) td {
+  background: var(--elastic-light-bg);
+}
+
+/* ── Lead slide (title / hero) ── */
+
+section.lead {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(135deg, var(--elastic-navy) 0%, #0d2847 50%, #0a3a6b 100%);
+  color: #fff;
+  padding: 60px 80px;
+}
+
+section.lead h1 {
+  color: #fff;
+  font-size: 2.8em;
+  font-weight: 900;
+  margin-bottom: 0.15em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+section.lead h2 {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  font-size: 1.3em;
+  margin-bottom: 0.6em;
+}
+
+section.lead p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.05em;
+  max-width: 700px;
+}
+
+section.lead strong {
+  color: #61A2FF;
+}
+
+section.lead code {
+  background: rgba(255, 255, 255, 0.12);
+  color: #61A2FF;
+}
+
+section.lead img {
+  filter: brightness(0) invert(1);
+  max-height: 70px;
+  margin-bottom: 20px;
+}
+
+section.lead::after {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Invert (dark) slide ── */
+
+section.invert {
+  background: var(--elastic-navy);
+  color: #dce6f5;
+}
+
+section.invert h1,
+section.invert h2 {
+  color: #fff;
+}
+
+section.invert h3 {
+  color: #61A2FF;
+}
+
+section.invert strong {
+  color: #61A2FF;
+}
+
+section.invert code {
+  background: rgba(97, 162, 255, 0.15);
+  color: #61A2FF;
+}
+
+section.invert li::marker {
+  color: #61A2FF;
+}
+
+section.invert::after {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Accent (blue) slide ── */
+
+section.accent {
+  background: linear-gradient(135deg, var(--elastic-blue) 0%, #1474f7 100%);
+  color: #fff;
+}
+
+section.accent h1,
+section.accent h2 {
+  color: #fff;
+}
+
+section.accent h3 {
+  color: #BFDBFF;
+}
+
+section.accent strong {
+  color: #fff;
+}
+
+section.accent code {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+section.accent pre {
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 0.65em;
+  padding: 18px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+section.accent li::marker {
+  color: #fff;
+}
+
+section.accent::after {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Teal slide ── */
+
+section.teal {
+  background: linear-gradient(135deg, #005f5d 0%, var(--elastic-teal) 100%);
+  color: #fff;
+}
+
+section.teal h1,
+section.teal h2,
+section.teal strong {
+  color: #fff;
+}
+
+section.teal code {
+  background: rgba(255, 255, 255, 0.15);
+  color: #C9F3F0;
+}
+
+section.teal li::marker {
+  color: #A6EDEA;
+}
+
+section.teal::after {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Split layout (two columns) ── */
+
+section.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 0 50px;
+}
+
+section.split h1,
+section.split h2 {
+  grid-column: 1 / -1;
+}
+
+/* ── Big number / stat slide ── */
+
+section.stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+section.stat h1 {
+  font-size: 5em;
+  color: var(--elastic-blue);
+  font-weight: 900;
+  margin-bottom: 0;
+  line-height: 1.1;
+}
+
+section.stat h2 {
+  font-weight: 500;
+  color: var(--elastic-subdued);
+  font-size: 1.4em;
+}
+
+/* ── Footer / header styling ── */
+
+header {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--elastic-subdued);
+  letter-spacing: 0.02em;
+}
+
+footer {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--elastic-subdued);
+}
+
+section.lead header,
+section.lead footer,
+section.invert header,
+section.invert footer,
+section.accent header,
+section.accent footer,
+section.teal header,
+section.teal footer {
+  color: rgba(255, 255, 255, 0.4);
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@elastic-cursor-plugin/mcp-server",
+  "version": "0.1.0",
+  "license": "Elastic-2.0 OR AGPL-3.0-only OR SSPL-1.0",
+  "description": "Core MCP server with Elasticsearch auth and transports",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "elastic-cursor-plugin": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.0.0",
+    "@elastic-cursor-plugin/tools-elasticsearch": "0.1.0",
+    "@elastic-cursor-plugin/tools-cloud": "0.1.0",
+    "@elastic-cursor-plugin/tools-observability": "0.1.0",
+    "@elastic-cursor-plugin/tools-security": "0.1.0",
+    "@elastic-cursor-plugin/tools-search-apps": "0.1.0",
+    "@elastic-cursor-plugin/tools-agent-builder": "0.1.0",
+    "@elastic-cursor-plugin/tools-kibana": "0.1.0",
+    "@elastic-cursor-plugin/docs-provider": "0.1.0",
+    "@modelcontextprotocol/sdk": "^1.25.0",
+    "dotenv": "^16.4.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

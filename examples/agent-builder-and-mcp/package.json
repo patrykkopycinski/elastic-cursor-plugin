@@ -1,0 +1,12 @@
+{
+  "name": "agent-builder-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "node setup-kb.js"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.17.0"
+  }
+}

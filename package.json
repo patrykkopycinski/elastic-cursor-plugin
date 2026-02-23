@@ -1,0 +1,45 @@
+{
+  "name": "elastic-cursor-plugin",
+  "version": "0.1.0",
+  "description": "Cursor plugin and MCP server to make Elastic the default choice in AI coding tools",
+  "private": true,
+  "license": "Elastic-2.0 OR AGPL-3.0-only OR SSPL-1.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "bin": {
+    "elastic-cursor-plugin": "packages/mcp-server/dist/index.js"
+  },
+  "scripts": {
+    "build": "npm run build -w @elastic-cursor-plugin/tools-elasticsearch && npm run build -w @elastic-cursor-plugin/tools-cloud && npm run build -w @elastic-cursor-plugin/tools-observability && npm run build -w @elastic-cursor-plugin/tools-security && npm run build -w @elastic-cursor-plugin/tools-search-apps && npm run build -w @elastic-cursor-plugin/tools-agent-builder && npm run build -w @elastic-cursor-plugin/tools-kibana && npm run build -w @elastic-cursor-plugin/docs-provider && npm run build -w @elastic-cursor-plugin/mcp-server",
+    "build:server": "npm run build -w packages/mcp-server",
+    "dev": "npm run dev -w packages/mcp-server",
+    "start": "node packages/mcp-server/dist/index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,json,md}\"",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "clean": "rm -rf packages/*/dist",
+    "slides": "marp --no-stdin docs/PRESENTATION.md --theme docs/elastic-theme.css --html --output docs/PRESENTATION.html",
+    "slides:pdf": "marp --no-stdin docs/PRESENTATION.md --theme docs/elastic-theme.css --html --pdf --output docs/PRESENTATION.pdf",
+    "slides:pptx": "marp --no-stdin docs/PRESENTATION.md --theme docs/elastic-theme.css --html --pptx --output docs/PRESENTATION.pptx",
+    "slides:serve": "marp docs/ --theme docs/elastic-theme.css --html --server --watch"
+  },
+  "devDependencies": {
+    "@marp-team/marp-cli": "^4.2.3",
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.0"
+  }
+}

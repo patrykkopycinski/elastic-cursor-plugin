@@ -1,0 +1,13 @@
+---
+description: Ask Cloud vs on-prem when setting up Elastic from scratch; on-prem uses Docker
+globs: *
+---
+
+# Deployment preference (Cloud vs on-prem)
+
+- When the user wants to **set up Elastic from zero** (no existing cluster), **ask for their preference** before provisioning:
+  - **Cloud**: Elastic Cloud (managed). Use `create_cloud_project`, `get_connection_config`, and related Cloud tools. No Docker or server management.
+  - **On-prem**: Self-hosted with **Docker**. Use the stack in `examples/on-prem-docker/` (Elasticsearch, Kibana, Fleet server, APM server, Elastic Agent). Use `get_deployment_guide` with `preference: "on_prem"` for the step-by-step guide.
+- Use the **get_deployment_guide** tool with the user’s choice (`preference: "cloud"` or `preference: "on_prem"`) to return the right steps.
+- For on-prem, deployment is done via **Docker** (docker-compose in this repo); do not assume a non-Docker or manual install unless the user asks for it.
+- If the user already has a cluster (Cloud or self-hosted), skip the preference question and use their existing ES_URL and credentials.

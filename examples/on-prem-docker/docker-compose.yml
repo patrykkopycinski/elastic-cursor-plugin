@@ -1,0 +1,84 @@
+# On-prem Elastic stack: Elasticsearch, Kibana, Fleet server, APM server.
+# Optional: Elastic Agent (enrollment token required from Kibana Fleet).
+# Ask the user: "Do you prefer Cloud or on-prem?" Use this when they choose on-prem.
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    environment:
+      - node.name=es01
+      - cluster.name=elastic-docker
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s -u elastic:${ELASTIC_PASSWORD:-changeme} http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:8.17.0
+    command: >
+      apm-server -e
+        -E apm-server.rum.enabled=true
+        -E apm-server.kibana.enabled=true
+        -E apm-server.kibana.host=kibana:5601
+        -E output.elasticsearch.hosts=["elasticsearch:9200"]
+        -E output.elasticsearch.username=elastic
+        -E output.elasticsearch.password=${ELASTIC_PASSWORD:-changeme}
+    ports:
+      - "8200:8200"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_started
+
+  # Fleet Server (optional): enable with profile "fleet". First create a Fleet Server policy
+  # in Kibana (Management → Fleet → Add Fleet Server) and set FLEET_SERVER_ENROLLMENT_TOKEN.
+  fleet-server:
+    image: docker.elastic.co/beats/elastic-agent:8.17.0
+    command: >
+      elastic-agent run
+        --insecure
+        --enrollment-token=${FLEET_SERVER_ENROLLMENT_TOKEN}
+        --fleet-server-es=http://elasticsearch:9200
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+    ports:
+      - "8220:8220"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_started
+    profiles:
+      - fleet
+
+volumes:
+  elasticsearch-data:

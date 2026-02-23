@@ -1,0 +1,26 @@
+{
+  "name": "@elastic-cursor-plugin/tools-observability",
+  "version": "0.1.0",
+  "license": "Elastic-2.0 OR AGPL-3.0-only OR SSPL-1.0",
+  "description": "Observability MCP tools (APM, logs, alerts, dashboards)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.0"
+  }
+}

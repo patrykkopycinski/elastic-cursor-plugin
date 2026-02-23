@@ -1,0 +1,13 @@
+---
+description: Index mapping and design best practices
+globs: *
+---
+
+# Index design best practices
+
+- **Keyword vs text**: Use `keyword` for exact match, filters, sorting, and aggregations. Use `text` for full-text search (with an analyzer). Use `keyword` with a subfield for both (e.g. `title.keyword`).
+- **Vectors**: Use `dense_vector` with dimensions matching your embedding model; set `index: true` and `similarity` (e.g. cosine) when you need kNN search. Use `rank_features` or sparse vectors where appropriate.
+- **Dates**: Use `date` type for time fields; use the same format as your ingestion or a compatible format.
+- **Nested vs flattened**: Use `nested` only when you need to query or aggregate on inner objects independently; otherwise `object` (default) or `flattened` may be simpler.
+- **Dynamic mapping**: Rely on dynamic mapping for quick prototyping; lock down with explicit mappings and `dynamic: false` or `strict` for production when schema is stable.
+- **Templates and ILM**: For time-series indices (logs, metrics), use index templates and Index Lifecycle Management (ILM) for rollover and retention.

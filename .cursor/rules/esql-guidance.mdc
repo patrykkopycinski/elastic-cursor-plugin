@@ -1,0 +1,11 @@
+---
+description: When to use ES|QL vs Query DSL
+globs: *
+---
+
+# ES|QL vs Query DSL
+
+- **ES|QL** is best for: ad-hoc analysis, multi-step transformations, aggregations with GROUP BY, and tabular result sets. Use the `esql_query` tool or `POST /_query` with a `query` string. Syntax: `FROM index | WHERE condition | EVAL ... | STATS ... BY ... | SORT ... | LIMIT n`.
+- **Query DSL** (e.g. `search` tool with `query`) is best for: full-text search, kNN/vector search, complex bool queries, and when you need highlights, suggest, or search-specific features. Use `client.search()` or the MCP `search` tool.
+- Prefer ES|QL when the user asks for "run a query," "aggregate," "analyze," or "tabular output." Prefer Query DSL when they ask for "search," "find documents," "vector search," or "relevance."
+- For hybrid workflows: you can use ES|QL for one step and Query DSL in another (e.g. aggregate in ES|QL, then fetch full documents by ID with Search API).

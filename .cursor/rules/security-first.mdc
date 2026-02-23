@@ -1,0 +1,12 @@
+---
+description: Security-first practices for Elasticsearch and API keys
+globs: *
+---
+
+# Security-first practices
+
+- **API keys**: Prefer API keys over basic auth when possible. Use scoped API keys with minimal privileges. Never commit API keys or credentials to the repository.
+- **Environment**: Store `ES_URL`, `ES_API_KEY`, `ELASTIC_CLOUD_API_KEY`, and similar in environment variables or a secure secret manager. Add `.env` to `.gitignore` and provide `.env.example` without real values.
+- **Least privilege**: When creating project or cluster API keys, grant only the indices and privileges required (e.g. read-only for search-only use cases).
+- **TLS**: Use HTTPS for Elasticsearch and Kibana in production. Disable TLS verification only for local development and document the risk.
+- **Secrets in code**: Do not log or echo credentials. Do not embed credentials in client-side or public front-end code.

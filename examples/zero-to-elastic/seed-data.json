@@ -1,0 +1,182 @@
+[
+  {
+    "title": "Dune",
+    "author": "Frank Herbert",
+    "genre": "Science Fiction",
+    "year": 1965,
+    "isbn": "978-0441172719",
+    "rating": 4.7,
+    "description": "On the desert planet Arrakis, young Paul Atreides is thrust into a struggle for control of the most valuable substance in the universe: the spice melange."
+  },
+  {
+    "title": "Neuromancer",
+    "author": "William Gibson",
+    "genre": "Science Fiction",
+    "year": 1984,
+    "isbn": "978-0441569595",
+    "rating": 4.3,
+    "description": "A washed-up computer hacker is hired for one last job: to hack the most powerful artificial intelligence in orbit above Earth."
+  },
+  {
+    "title": "The Left Hand of Darkness",
+    "author": "Ursula K. Le Guin",
+    "genre": "Science Fiction",
+    "year": 1969,
+    "isbn": "978-0441478125",
+    "rating": 4.4,
+    "description": "A lone human envoy is sent to the ice-bound planet Gethen to persuade its nations to join an interplanetary civilization."
+  },
+  {
+    "title": "The Big Sleep",
+    "author": "Raymond Chandler",
+    "genre": "Mystery",
+    "year": 1939,
+    "isbn": "978-0394758282",
+    "rating": 4.2,
+    "description": "Private detective Philip Marlowe is hired by a wealthy general to resolve a blackmail scheme, but the case spirals into murder and deception."
+  },
+  {
+    "title": "The Name of the Rose",
+    "author": "Umberto Eco",
+    "genre": "Mystery",
+    "year": 1980,
+    "isbn": "978-0544176560",
+    "rating": 4.3,
+    "description": "In a medieval Italian monastery, a Franciscan friar investigates a series of murders connected to a forbidden book in the labyrinthine library."
+  },
+  {
+    "title": "In the Woods",
+    "author": "Tana French",
+    "genre": "Mystery",
+    "year": 2007,
+    "isbn": "978-0143113492",
+    "rating": 4.1,
+    "description": "A Dublin detective investigates the murder of a child found at an archaeological dig, a case that echoes the unsolved disappearance of his own childhood friends."
+  },
+  {
+    "title": "The Guns of August",
+    "author": "Barbara W. Tuchman",
+    "genre": "History",
+    "year": 1962,
+    "isbn": "978-0345386236",
+    "rating": 4.5,
+    "description": "A Pulitzer Prize-winning account of the first month of World War I, tracing the political miscalculations and military blunders that shaped the conflict."
+  },
+  {
+    "title": "Sapiens: A Brief History of Humankind",
+    "author": "Yuval Noah Harari",
+    "genre": "History",
+    "year": 2011,
+    "isbn": "978-0062316097",
+    "rating": 4.4,
+    "description": "A sweeping narrative of human history from the Stone Age to the present, exploring how biology and culture shaped the species that came to dominate Earth."
+  },
+  {
+    "title": "SPQR: A History of Ancient Rome",
+    "author": "Mary Beard",
+    "genre": "History",
+    "year": 2015,
+    "isbn": "978-1631492228",
+    "rating": 4.3,
+    "description": "A thousand-year history of Rome from its founding myth through the granting of citizenship to all free inhabitants of the empire."
+  },
+  {
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "genre": "Romance",
+    "year": 1813,
+    "isbn": "978-0141439518",
+    "rating": 4.6,
+    "description": "The spirited Elizabeth Bennet navigates class, family, and her own misjudgments as she contends with the proud and enigmatic Mr. Darcy."
+  },
+  {
+    "title": "The Notebook",
+    "author": "Nicholas Sparks",
+    "genre": "Romance",
+    "year": 1996,
+    "isbn": "978-1455582877",
+    "rating": 4.1,
+    "description": "An elderly man reads from a notebook to a woman suffering from dementia, telling the story of two young lovers separated by war and class."
+  },
+  {
+    "title": "Outlander",
+    "author": "Diana Gabaldon",
+    "genre": "Romance",
+    "year": 1991,
+    "isbn": "978-0440212560",
+    "rating": 4.5,
+    "description": "A former World War II combat nurse is swept back in time to 1743 Scotland, where she encounters a gallant young warrior and is torn between two lives."
+  },
+  {
+    "title": "Designing Data-Intensive Applications",
+    "author": "Martin Kleppmann",
+    "genre": "Technology",
+    "year": 2017,
+    "isbn": "978-1449373320",
+    "rating": 4.8,
+    "description": "A guide to the principles and practicalities behind reliable, scalable, and maintainable data systems, from replication to stream processing."
+  },
+  {
+    "title": "The Pragmatic Programmer",
+    "author": "David Thomas and Andrew Hunt",
+    "genre": "Technology",
+    "year": 1999,
+    "isbn": "978-0201616224",
+    "rating": 4.6,
+    "description": "A collection of tips and practices for software developers, covering topics from career development to architectural design and pragmatic coding."
+  },
+  {
+    "title": "Clean Code",
+    "author": "Robert C. Martin",
+    "genre": "Technology",
+    "year": 2008,
+    "isbn": "978-0132350884",
+    "rating": 4.4,
+    "description": "A handbook of agile software craftsmanship that teaches how to write code that is easy to read, understand, and maintain."
+  },
+  {
+    "title": "Elasticsearch: The Definitive Guide",
+    "author": "Clinton Gormley and Zachary Tong",
+    "genre": "Technology",
+    "year": 2015,
+    "isbn": "978-1449358549",
+    "rating": 4.2,
+    "description": "A comprehensive introduction to Elasticsearch covering distributed search, analytics, and the practicalities of running it in production."
+  },
+  {
+    "title": "The Hitchhiker's Guide to the Galaxy",
+    "author": "Douglas Adams",
+    "genre": "Science Fiction",
+    "year": 1979,
+    "isbn": "978-0345391803",
+    "rating": 4.6,
+    "description": "Seconds before Earth is demolished for a galactic freeway, Arthur Dent is swept off the planet by his friend Ford Prefect on a wild journey through space."
+  },
+  {
+    "title": "Gone Girl",
+    "author": "Gillian Flynn",
+    "genre": "Mystery",
+    "year": 2012,
+    "isbn": "978-0307588371",
+    "rating": 4.2,
+    "description": "On the morning of his fifth wedding anniversary, Nick Dunne reports his wife Amy missing. Under pressure from police and media, his portrait of a blissful union begins to crumble."
+  },
+  {
+    "title": "The Silk Roads",
+    "author": "Peter Frankopan",
+    "genre": "History",
+    "year": 2015,
+    "isbn": "978-1101946329",
+    "rating": 4.3,
+    "description": "A reorientation of world history around the ancient trade routes of Central Asia, showing how the East drove global civilisation for millennia."
+  },
+  {
+    "title": "Normal People",
+    "author": "Sally Rooney",
+    "genre": "Romance",
+    "year": 2018,
+    "isbn": "978-1984822178",
+    "rating": 4.0,
+    "description": "Two young people in a small Irish town navigate the complexities of their relationship from secondary school through university, shaped by class and insecurity."
+  }
+]

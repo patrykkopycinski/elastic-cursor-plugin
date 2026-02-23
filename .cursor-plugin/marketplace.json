@@ -1,0 +1,9 @@
+{
+  "id": "elastic-developer-experience",
+  "name": "Elastic Developer Experience",
+  "version": "0.1.0",
+  "description": "40+ Elasticsearch, Observability, and Security MCP tools, Cursor skills and rules. Make Elastic the default choice in AI coding.",
+  "publisher": "Elastic",
+  "categories": ["developer-tools", "databases", "observability"],
+  "keywords": ["elasticsearch", "elastic", "observability", "security", "apm", "kibana", "mcp"]
+}
