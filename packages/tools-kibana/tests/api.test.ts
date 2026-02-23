@@ -263,14 +263,15 @@ describe('tools-kibana API usage', () => {
   });
 
   describe('registerAll', () => {
-    it('registers exactly 4 tools', () => {
+    it('registers exactly 5 tools', () => {
       const server = createCaptureServer();
       registerAll(server);
-      expect(server.tools.size).toBe(4);
+      expect(server.tools.size).toBe(5);
       expect(server.tools.has('kibana_list_data_views')).toBe(true);
       expect(server.tools.has('kibana_list_dashboards')).toBe(true);
       expect(server.tools.has('kibana_list_saved_objects')).toBe(true);
       expect(server.tools.has('kibana_info')).toBe(true);
+      expect(server.tools.has('kibana_create_dashboard')).toBe(true);
     });
   });
 });

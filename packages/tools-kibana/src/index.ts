@@ -12,6 +12,7 @@ import { registerListDataViews } from './list-data-views.js';
 import { registerListDashboards } from './list-dashboards.js';
 import { registerListSavedObjects } from './list-saved-objects.js';
 import { registerKibanaInfo } from './kibana-info.js';
+import { registerCreateDashboard } from './create-dashboard.js';
 
 export type { ToolRegistrationContext } from './types.js';
 
@@ -20,4 +21,5 @@ export function registerAll(server: ToolRegistrationContext): void {
   registerListDashboards(server);
   registerListSavedObjects(server);
   registerKibanaInfo(server);
+  registerCreateDashboard(server);
 }
