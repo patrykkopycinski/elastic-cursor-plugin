@@ -1,0 +1,73 @@
+# Local Elastic stack with OTLP intake for the IoT Dashboard-as-Code example.
+# Starts Elasticsearch, Kibana, and APM Server (OTLP receiver) for local development.
+# See also: examples/on-prem-docker/ for a general-purpose stack without OTLP.
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.0-SNAPSHOT
+    environment:
+      - node.name=es01
+      - cluster.name=iot-demo
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf -u elastic:${ELASTIC_PASSWORD:-changeme} http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.4.0-SNAPSHOT
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - coreApp.allowDynamicConfigOverrides=true
+      - server.restrictInternalApis=false
+      - feature_flags.overrides.dashboardAgent.enabled=true
+      - feature_flags.overrides.lens.apiFormat=true
+      - feature_flags.overrides.lens.enable_esql=true
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:5601/api/status | grep -q '\"overall\"'" ]
+      interval: 15s
+      timeout: 10s
+      retries: 30
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:9.4.0-SNAPSHOT
+    command: >
+      apm-server -e
+        -E apm-server.rum.enabled=true
+        -E apm-server.kibana.enabled=true
+        -E apm-server.kibana.host=kibana:5601
+        -E output.elasticsearch.hosts=["elasticsearch:9200"]
+        -E output.elasticsearch.username=elastic
+        -E output.elasticsearch.password=${ELASTIC_PASSWORD:-changeme}
+    ports:
+      - "8200:8200"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_started
+
+volumes:
+  elasticsearch-data:

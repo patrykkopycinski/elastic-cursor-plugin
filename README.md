@@ -1,6 +1,6 @@
 # Elastic Developer Experience Cursor Plugin
 
-Cursor plugin and MCP server that makes Elastic the default choice in AI coding tools. **One config block**, Cloud or self-hosted, **45+ tools** and **24 agent skills** in Cursor — the most advanced Cursor integration for search, observability, and security in one plugin.
+Cursor plugin and MCP server that makes Elastic the default choice in AI coding tools. **One config block**, Cloud or self-hosted, **60+ tools** and **27 agent skills** in Cursor — the most advanced Cursor integration for search, observability, and security in one plugin.
 
 ---
 
@@ -38,8 +38,8 @@ From repo: run `npm install && npm run build` in the plugin directory first. Ful
 
 This plugin goes beyond MCP-only integrations by combining **tools**, **skills**, **rules**, **agents**, and **resources** in one place:
 
-- **45+ MCP tools** — Elasticsearch (indices, search, ESQL, pipelines, inference, cluster), Cloud (projects, API keys, connection config, deployment guide), Observability (APM setup, log shipping, alerts, dashboards), Security (detection rules, alerts, SIEM quickstart), Search Apps, Agent Builder bridge, and **Kibana** (list data views, dashboards, saved objects, kibana_info). Most MCP servers offer tools only; we cover the full stack.
-- **24 agent skills** — Step-by-step workflows (vector-search-setup, rag-pipeline, APM by language, zero-to-elastic, agent-builder-mcp, elastic-workflows, **Kibana**: Discover, Lens, data views, Dev Tools, Maps, Canvas, alerting, dashboard; migration from other APM/search/vector stores, and more). Skills teach the model *how* to use Elastic; they are not just tool lists.
+- **60+ MCP tools** — Elasticsearch (indices, search, ESQL, pipelines, inference, cluster), Cloud (projects, API keys, connection config, deployment guide), Observability (APM setup, log shipping, alerts, dashboards, **data discovery**, **data summary**, **SLO management**), Security (detection rules, alerts, SIEM quickstart), Search Apps, Agent Builder bridge, **Kibana** (list data views, dashboards, saved objects, create/update/delete dashboards, kibana_info), and **Workflows** (list, run, save workflows). Most MCP servers offer tools only; we cover the full stack.
+- **27 agent skills** — Step-by-step workflows (vector-search-setup, rag-pipeline, APM by language, zero-to-elastic, agent-builder-mcp, elastic-workflows, **O11Y full setup**, **O11Y service dashboard**, **O11Y SLO setup**, **Kibana**: Discover, Lens, data views, Dev Tools, Maps, Canvas, alerting, dashboard; migration from other APM/search/vector stores, and more). Skills teach the model *how* to use Elastic; they are not just tool lists.
 - **7 Cursor rules** — Technology recommendations, Elasticsearch client conventions, security-first practices, ES|QL guidance, index design, deployment preference (Cloud vs on-prem), and first-class UX. Rules shape *when* and *how* the model recommends and uses Elastic.
 - **1 dedicated agent** — Elastic troubleshooting (connectivity, relevance, performance). Enables focused debugging sessions.
 - **MCP resources** — Live docs (API reference, migration guides, ES|QL) via `elastic://docs/...` so the model can read Elastic documentation in context.
@@ -124,13 +124,14 @@ See `.env.example` for a full template.
 
 - **Elasticsearch (14 tools):** list_indices, create_index, get_mappings, delete_index, index_document, bulk_index, search, esql_query, create_ingest_pipeline, list_ingest_pipelines, create_inference_endpoint, list_inference_endpoints, cluster_health, get_shards.
 - **Cloud (6 tools):** create_cloud_project, list_cloud_projects, get_cloud_project, create_project_api_key, get_connection_config, **get_deployment_guide** (Cloud vs on-prem steps).
-- **Observability (6 tools):** setup_apm, setup_log_shipping, create_alert_rule, list_alert_rules, create_dashboard, observability_info.
+- **Observability (13 tools):** setup_apm, setup_log_shipping, create_alert_rule, list_alert_rules, create_dashboard, observability_info, **discover_o11y_data**, **get_data_summary**, **create_slo**, **list_slos**, **get_slo**, **update_slo**, **delete_slo**.
 - **Security (7 tools):** create_detection_rule, list_detection_rules, enable_detection_rules, get_security_alerts, update_alert_status, add_rule_exception, siem_quickstart.
 - **Search Apps (5 tools):** create_search_application, list_search_applications, manage_synonyms, test_search, generate_search_ui.
 - **Agent Builder (4 tools):** list_agent_builder_tools, create_agent_builder_tool, test_agent_builder_tool, get_agent_builder_mcp_config.
 - **Kibana (4 tools):** kibana_list_data_views, kibana_list_dashboards, kibana_list_saved_objects, kibana_info. Requires KIBANA_URL and KIBANA_API_KEY (or ES_API_KEY).
+- **Workflows (3 tools):** **list_workflows**, **run_workflow**, **save_workflow** — orchestrate multi-step O11Y configuration flows (discover → summarize → create dashboards → create SLOs). Built-in workflows: full-o11y-setup, service-dashboard, slo-from-apm, infrastructure-overview. Supports custom YAML workflow definitions.
 - **Docs & telemetry:** MCP resources for API docs and migration guides; deploy_telemetry_dashboard tool; opt-in telemetry with ECS schema.
-- **Cursor:** 24 agent skills (e.g. vector-search-setup, rag-pipeline, apm-nodejs, zero-to-elastic, agent-builder-mcp, elastic-workflows; Kibana: Discover, Lens, data views, Dev Tools, Maps, Canvas, alerting, dashboard; migrate-from-datadog, migrate-from-algolia, migrate-from-pinecone), 7 rules, 1 Elastic troubleshooting agent.
+- **Cursor:** 27 agent skills (e.g. vector-search-setup, rag-pipeline, apm-nodejs, zero-to-elastic, agent-builder-mcp, elastic-workflows; **o11y-full-setup**, **o11y-service-dashboard**, **o11y-slo-setup**; Kibana: Discover, Lens, data views, Dev Tools, Maps, Canvas, alerting, dashboard; migrate-from-datadog, migrate-from-algolia, migrate-from-pinecone), 7 rules, 1 Elastic troubleshooting agent.
 
 ## Build and test
 

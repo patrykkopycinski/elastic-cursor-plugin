@@ -30,9 +30,10 @@ export async function getKibanaVersion(): Promise<string | null> {
 
 export async function enableFeatureFlags(): Promise<string[]> {
   const notes: string[] = [];
-  const flags = {
+  const flags: Record<string, boolean> = {
     'dashboardAgent.enabled': true,
     'lens.apiFormat': true,
+    'lens.enable_esql': true,
   };
 
   const result = await kibanaFetch('/internal/core/_settings', {
@@ -42,11 +43,11 @@ export async function enableFeatureFlags(): Promise<string[]> {
   });
 
   if (result.ok) {
-    notes.push('Feature flags enabled (dashboardAgent.enabled, lens.apiFormat).');
+    notes.push('Feature flags enabled (dashboardAgent.enabled, lens.apiFormat, lens.enable_esql).');
   } else {
     notes.push(
       'Could not enable feature flags dynamically (coreApp.allowDynamicConfigOverrides may be false). ' +
-        'Add to kibana.yml: feature_flags.overrides: { lens.apiFormat: true }'
+      'Add to kibana.yml: feature_flags.overrides: { lens.apiFormat: true, dashboardAgent.enabled: true, lens.enable_esql: true }'
     );
   }
 

@@ -15,7 +15,7 @@
     "elastic-cursor-plugin": "packages/mcp-server/dist/index.js"
   },
   "scripts": {
-    "build": "npm run build -w @elastic-cursor-plugin/tools-elasticsearch && npm run build -w @elastic-cursor-plugin/tools-cloud && npm run build -w @elastic-cursor-plugin/tools-observability && npm run build -w @elastic-cursor-plugin/tools-security && npm run build -w @elastic-cursor-plugin/tools-search-apps && npm run build -w @elastic-cursor-plugin/tools-agent-builder && npm run build -w @elastic-cursor-plugin/tools-kibana && npm run build -w @elastic-cursor-plugin/docs-provider && npm run build -w @elastic-cursor-plugin/mcp-server",
+    "build": "npm run build -w @elastic-cursor-plugin/tools-elasticsearch && npm run build -w @elastic-cursor-plugin/tools-cloud && npm run build -w @elastic-cursor-plugin/tools-observability && npm run build -w @elastic-cursor-plugin/tools-security && npm run build -w @elastic-cursor-plugin/tools-search-apps && npm run build -w @elastic-cursor-plugin/tools-agent-builder && npm run build -w @elastic-cursor-plugin/tools-kibana && npm run build -w @elastic-cursor-plugin/tools-workflows && npm run build -w @elastic-cursor-plugin/docs-provider && npm run build -w @elastic-cursor-plugin/mcp-server",
     "build:server": "npm run build -w packages/mcp-server",
     "dev": "npm run dev -w packages/mcp-server",
     "start": "node packages/mcp-server/dist/index.js",

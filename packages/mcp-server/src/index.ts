@@ -35,6 +35,7 @@ import { registerAll as registerSecurityTools } from '@elastic-cursor-plugin/too
 import { registerAll as registerSearchAppsTools } from '@elastic-cursor-plugin/tools-search-apps';
 import { registerAll as registerAgentBuilderTools } from '@elastic-cursor-plugin/tools-agent-builder';
 import { registerAll as registerKibanaTools } from '@elastic-cursor-plugin/tools-kibana';
+import { registerAll as registerWorkflowTools } from '@elastic-cursor-plugin/tools-workflows';
 import { registerDocsResources } from '@elastic-cursor-plugin/docs-provider';
 
 const SERVER_NAME = 'elastic-developer-experience';
@@ -63,7 +64,9 @@ Connect to Elasticsearch and use Elastic Cloud, Observability, and Security tool
 Configuration: ES_URL + ES_API_KEY (or ES_USERNAME/ES_PASSWORD), or ES_CLOUD_ID + ES_API_KEY.
 Startup health: ${health.ok ? `Connected (${health.clusterName ?? 'cluster'} ${health.version ?? ''})` : health.message}
 
-Use the available tools to manage indices, run searches, ESQL, ingest pipelines, inference endpoints, and more. Return copy-paste-ready snippets (connection config, code) when possible.`,
+Use the available tools to manage indices, run searches, ESQL, ingest pipelines, inference endpoints, and more. Return copy-paste-ready snippets (connection config, code) when possible.
+
+**O11Y Workflows:** Use discover_o11y_data to auto-detect APM services, metrics, and logs. Use get_data_summary for a rich summary with dashboard and SLO recommendations. Use list_workflows and run_workflow for multi-step O11Y configuration flows. Use create_slo/list_slos/get_slo/update_slo/delete_slo for SLO management.`,
     }
   );
 
@@ -74,6 +77,7 @@ Use the available tools to manage indices, run searches, ESQL, ingest pipelines,
   registerSearchAppsTools(server as unknown as import('@elastic-cursor-plugin/tools-search-apps').ToolRegistrationContext);
   registerAgentBuilderTools(server as unknown as import('@elastic-cursor-plugin/tools-agent-builder').ToolRegistrationContext);
   registerKibanaTools(server as unknown as import('@elastic-cursor-plugin/tools-kibana').ToolRegistrationContext);
+  registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext);
   registerDocsResources(server as unknown as import('@elastic-cursor-plugin/docs-provider').ServerLike);
 
   server.registerTool(

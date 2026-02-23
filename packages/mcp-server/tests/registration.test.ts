@@ -19,6 +19,7 @@ import { registerAll as registerSecurityTools } from '@elastic-cursor-plugin/too
 import { registerAll as registerSearchAppsTools } from '@elastic-cursor-plugin/tools-search-apps';
 import { registerAll as registerAgentBuilderTools } from '@elastic-cursor-plugin/tools-agent-builder';
 import { registerAll as registerKibanaTools } from '@elastic-cursor-plugin/tools-kibana';
+import { registerAll as registerWorkflowTools } from '@elastic-cursor-plugin/tools-workflows';
 import { registerDocsResources } from '@elastic-cursor-plugin/docs-provider';
 import type { Client } from '@elastic/elasticsearch';
 
@@ -29,7 +30,7 @@ function createCaptureServer(): ToolRegistrationContext & {
   const tools = new Map<string, { name: string }>();
   return {
     tools,
-    registerResource: () => {},
+    registerResource: () => { },
     registerTool(name: string) {
       tools.set(name, { name });
     },
@@ -49,11 +50,12 @@ describe('MCP server registration', () => {
       registerSearchAppsTools(server as unknown as import('@elastic-cursor-plugin/tools-search-apps').ToolRegistrationContext);
       registerAgentBuilderTools(server as unknown as import('@elastic-cursor-plugin/tools-agent-builder').ToolRegistrationContext);
       registerKibanaTools(server as unknown as import('@elastic-cursor-plugin/tools-kibana').ToolRegistrationContext);
+      registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext);
       registerDocsResources(server as unknown as import('@elastic-cursor-plugin/docs-provider').ServerLike);
     }).not.toThrow();
   });
 
-  it('registers expected number of tools (ES + Cloud + Obs + Security + SearchApps + AgentBuilder + Kibana)', () => {
+  it('registers expected number of tools (ES + Cloud + Obs + Security + SearchApps + AgentBuilder + Kibana + Workflows)', () => {
     const server = createCaptureServer();
     const mockClient = {} as Client;
 
@@ -64,9 +66,10 @@ describe('MCP server registration', () => {
     registerSearchAppsTools(server as unknown as import('@elastic-cursor-plugin/tools-search-apps').ToolRegistrationContext);
     registerAgentBuilderTools(server as unknown as import('@elastic-cursor-plugin/tools-agent-builder').ToolRegistrationContext);
     registerKibanaTools(server as unknown as import('@elastic-cursor-plugin/tools-kibana').ToolRegistrationContext);
+    registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext);
 
-    // 14 + 6 + 6 + 7 + 5 + 4 + 8 = 50 (deploy_telemetry_dashboard is registered in main, not here)
-    expect(server.tools.size).toBe(50);
+    // 14 + 6 + 14 + 7 + 5 + 4 + 8 + 3 = 61 (deploy_telemetry_dashboard is registered in main, not here)
+    expect(server.tools.size).toBe(61);
     expect(server.tools.has('list_indices')).toBe(true);
     expect(server.tools.has('search')).toBe(true);
     expect(server.tools.has('esql_query')).toBe(true);
@@ -86,5 +89,13 @@ describe('MCP server registration', () => {
     expect(server.tools.has('kibana_delete_dashboard')).toBe(true);
     expect(server.tools.has('list_agent_builder_tools')).toBe(true);
     expect(server.tools.has('create_agent_builder_tool')).toBe(true);
+    expect(server.tools.has('discover_o11y_data')).toBe(true);
+    expect(server.tools.has('get_data_summary')).toBe(true);
+    expect(server.tools.has('create_slo')).toBe(true);
+    expect(server.tools.has('list_slos')).toBe(true);
+    expect(server.tools.has('create_iot_dashboard')).toBe(true);
+    expect(server.tools.has('list_workflows')).toBe(true);
+    expect(server.tools.has('run_workflow')).toBe(true);
+    expect(server.tools.has('save_workflow')).toBe(true);
   });
 });

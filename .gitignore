@@ -7,6 +7,7 @@ dist/
 coverage/
 .nyc_output/
 .cursor/
+openspec/
 docs/PRESENTATION.html
 docs/PRESENTATION.pdf
 docs/PRESENTATION.pptx

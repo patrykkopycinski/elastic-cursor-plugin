@@ -1,0 +1,4 @@
+node_modules/
+iot-demo/
+.env
+.env.local

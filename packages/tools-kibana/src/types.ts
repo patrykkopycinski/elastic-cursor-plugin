@@ -31,12 +31,14 @@ export async function kibanaFetch(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'kbn-xsrf': 'true',
+    'x-elastic-internal-origin': 'kibana',
     ...options.headers,
   };
   if (apiKey) {
     headers.Authorization = `ApiKey ${apiKey}`;
   } else if (username && password) {
-    headers.Authorization = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;  }
+    headers.Authorization = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
+  }
   try {
     const url = `${base.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
     const res = await fetch(url, {

@@ -1,0 +1,11 @@
+{
+  "name": "iot-dashboard-as-code",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "node setup.js",
+    "setup:data-only": "node setup.js --generate-data-only",
+    "teardown": "docker compose down -v && rm -rf iot-demo"
+  }
+}

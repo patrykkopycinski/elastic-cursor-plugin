@@ -14,8 +14,18 @@ import { registerCreateAlertRule } from './create-alert-rule.js';
 import { registerListAlertRules } from './list-alert-rules.js';
 import { registerCreateDashboard } from './create-dashboard.js';
 import { registerObservabilityInfo } from './observability-info.js';
+import { registerDiscoverO11yData } from './discover-o11y-data.js';
+import { registerCreateSlo } from './create-slo.js';
+import { registerListSlos } from './list-slos.js';
+import { registerGetSlo } from './get-slo.js';
+import { registerUpdateSlo } from './update-slo.js';
+import { registerDeleteSlo } from './delete-slo.js';
+import { registerGetDataSummary } from './get-data-summary.js';
+import { registerCreateIotDashboard } from './create-iot-dashboard.js';
 
 export type { ToolRegistrationContext } from './types.js';
+export { listTemplates, getTemplate, generateDashboard } from './templates/index.js';
+export type { DashboardTemplate, DashboardConfig, DashboardOverrides, TemplateInfo } from './templates/index.js';
 
 export function registerAll(server: ToolRegistrationContext): void {
   registerSetupApm(server);
@@ -24,4 +34,12 @@ export function registerAll(server: ToolRegistrationContext): void {
   registerListAlertRules(server);
   registerCreateDashboard(server);
   registerObservabilityInfo(server);
+  registerDiscoverO11yData(server);
+  registerCreateSlo(server);
+  registerListSlos(server);
+  registerGetSlo(server);
+  registerUpdateSlo(server);
+  registerDeleteSlo(server);
+  registerGetDataSummary(server);
+  registerCreateIotDashboard(server);
 }

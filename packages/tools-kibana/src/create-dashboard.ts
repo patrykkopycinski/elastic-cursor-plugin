@@ -32,19 +32,25 @@ const esqlDatasetSchema = z.object({
 const datasetSchema = z.discriminatedUnion('type', [dataViewDatasetSchema, esqlDatasetSchema]);
 
 const columnRefSchema = z.object({
+  type: z.string().optional().describe('Metric type: "primary" or "secondary" (required for metric chart metrics array)'),
   operation: z.string().optional().describe('Operation type: "value" for ES|QL columns, or aggregation like "count", "average", "sum", "terms", "date_histogram"'),
   column: z.string().optional().describe('Column name from ES|QL query result'),
   field: z.string().optional().describe('Field name for dataView aggregations'),
   size: z.number().optional().describe('Number of buckets for terms aggregation'),
-  label: z.string().optional().describe('Custom label for this metric/dimension'),
+  label: z.string().optional().describe('Custom label (only for metric/datatable panels, NOT for xy y-axis with ES|QL)'),
 });
 
 const xyLayerSchema = z.object({
-  type: z.enum(['bar', 'line', 'area']).default('bar').describe('Layer chart type'),
-  dataset: datasetSchema.optional().describe('Per-layer dataset (overrides panel-level)'),
+  type: z.enum([
+    'bar', 'line', 'area',
+    'area_percentage', 'area_stacked',
+    'bar_horizontal', 'bar_horizontal_stacked', 'bar_horizontal_percentage',
+    'bar_percentage', 'bar_stacked',
+  ]).default('bar').describe('Layer chart type'),
+  dataset: datasetSchema.describe('Data source for this layer (required for as-code API — each XY layer carries its own dataset)'),
   x: columnRefSchema.optional().describe('X-axis dimension'),
-  y: z.array(columnRefSchema).optional().describe('Y-axis metrics'),
-  breakdown: columnRefSchema.optional().describe('Breakdown/split series dimension'),
+  y: z.array(columnRefSchema).optional().describe('Y-axis metrics. For ES|QL layers only "operation"+"column" are valid (no "label")'),
+  breakdown_by: columnRefSchema.optional().describe('Breakdown/split series dimension'),
 });
 
 const lensMarkdownPanelSchema = z.object({
@@ -67,7 +73,7 @@ const lensPanelSchema = z.object({
     .describe('Lens chart type'),
   uid: z.string().optional().describe('Unique panel ID'),
   title: z.string().optional().describe('Panel title'),
-  dataset: datasetSchema.optional().describe('Data source: esql or dataView'),
+  dataset: datasetSchema.optional().describe('Data source: esql or dataView. For xy panels, put dataset on each layer instead.'),
   grid: z
     .object({
       x: z.number().default(0),
@@ -76,13 +82,14 @@ const lensPanelSchema = z.object({
       h: z.number().default(10),
     })
     .optional(),
-  metric: columnRefSchema.optional().describe('Primary metric (for metric, gauge, heatmap types)'),
-  metrics: z.array(columnRefSchema).optional().describe('Multiple metrics (for datatable)'),
-  layers: z.array(xyLayerSchema).optional().describe('Chart layers (for xy type)'),
+  metric: columnRefSchema.optional().describe('Primary metric (for gauge). For metric type, use "metrics" array instead.'),
+  metrics: z.array(columnRefSchema).optional().describe('Metrics array. For metric type: [{ type: "primary", operation: "value", column: "col" }]. For datatable: [{ operation: "value", column: "col" }]'),
+  layers: z.array(xyLayerSchema).optional().describe('Chart layers (for xy type). Each layer must have its own dataset.'),
   xAxis: columnRefSchema.optional().describe('X-axis (for heatmap)'),
   yAxis: columnRefSchema.optional().describe('Y-axis (for heatmap)'),
   rows: z.array(columnRefSchema).optional().describe('Row dimensions (for datatable)'),
   columns: z.array(columnRefSchema).optional().describe('Column definitions (for datatable)'),
+  breakdown_by: columnRefSchema.optional().describe('Breakdown dimension (for metric type)'),
   tag_by: columnRefSchema.optional().describe('Tag dimension (for tagcloud)'),
   region: z.object({
     operation: z.string().optional(),
@@ -123,6 +130,15 @@ const inputSchema = z.object({
 type PanelInput = z.infer<typeof panelSchema>;
 type CreateDashboardInput = z.infer<typeof inputSchema>;
 
+function isEsqlDataset(dataset?: { type: string }): boolean {
+  return dataset?.type === 'esql';
+}
+
+function stripLabel(ref: Record<string, unknown>): Record<string, unknown> {
+  const { label, ...rest } = ref;
+  return rest;
+}
+
 function buildAsCodePanels(panels: PanelInput[]): Array<Record<string, unknown>> {
   let currentY = 0;
 
@@ -150,25 +166,66 @@ function buildAsCodePanels(panels: PanelInput[]): Array<Record<string, unknown>>
 
     const attributes: Record<string, unknown> = { type: panel.type };
     if (panel.title) attributes.title = panel.title;
-    if (panel.dataset) attributes.dataset = panel.dataset;
-    if (panel.metric) attributes.metric = panel.metric;
-    if (panel.metrics) attributes.metrics = panel.metrics;
-    if (panel.layers) {
-      attributes.layers = panel.layers.map((layer) => {
-        const l: Record<string, unknown> = { type: layer.type };
-        if (layer.dataset) l.dataset = layer.dataset;
-        if (layer.x) l.x = layer.x;
-        if (layer.y) l.y = layer.y;
-        if (layer.breakdown) l.breakdown = layer.breakdown;
-        return l;
-      });
+
+    if (panel.type === 'metric') {
+      if (panel.dataset) attributes.dataset = panel.dataset;
+      const esql = isEsqlDataset(panel.dataset);
+      if (panel.metrics?.length) {
+        attributes.metrics = panel.metrics.map((m) => ({
+          type: m.type ?? 'primary',
+          operation: m.operation ?? 'value',
+          ...(m.column ? { column: m.column } : {}),
+          ...(m.field ? { field: m.field } : {}),
+          ...(m.label ? { label: m.label } : {}),
+        }));
+      } else if (panel.metric) {
+        attributes.metrics = [{
+          type: 'primary',
+          operation: panel.metric.operation ?? 'value',
+          ...(panel.metric.column ? { column: panel.metric.column } : {}),
+          ...(panel.metric.field ? { field: panel.metric.field } : {}),
+        }];
+      }
+      if (panel.breakdown_by) {
+        attributes.breakdown_by = esql ? stripLabel(panel.breakdown_by) : panel.breakdown_by;
+      }
+    } else if (panel.type === 'xy') {
+      if (panel.layers) {
+        attributes.layers = panel.layers.map((layer) => {
+          const l: Record<string, unknown> = { type: layer.type };
+          const layerEsql = isEsqlDataset(layer.dataset);
+          l.dataset = layer.dataset ?? panel.dataset;
+          if (layer.x) l.x = layerEsql ? stripLabel(layer.x) : layer.x;
+          if (layer.y) {
+            l.y = layerEsql
+              ? layer.y.map(stripLabel)
+              : layer.y;
+          }
+          if (layer.breakdown_by) {
+            l.breakdown_by = layerEsql ? stripLabel(layer.breakdown_by) : layer.breakdown_by;
+          }
+          return l;
+        });
+      }
+    } else if (panel.type === 'gauge') {
+      if (panel.dataset) attributes.dataset = panel.dataset;
+      if (panel.metric) attributes.metric = panel.metric;
+    } else if (panel.type === 'datatable') {
+      if (panel.dataset) attributes.dataset = panel.dataset;
+      if (panel.metrics) attributes.metrics = panel.metrics;
+      if (panel.rows) attributes.rows = panel.rows;
+      if (panel.columns) attributes.columns = panel.columns;
+    } else {
+      if (panel.dataset) attributes.dataset = panel.dataset;
+      if (panel.metric) attributes.metric = panel.metric;
+      if (panel.metrics) attributes.metrics = panel.metrics;
+      if (panel.xAxis) attributes.xAxis = panel.xAxis;
+      if (panel.yAxis) attributes.yAxis = panel.yAxis;
+      if (panel.rows) attributes.rows = panel.rows;
+      if (panel.columns) attributes.columns = panel.columns;
+      if (panel.tag_by) attributes.tag_by = panel.tag_by;
+      if (panel.region) attributes.region = panel.region;
     }
-    if (panel.xAxis) attributes.xAxis = panel.xAxis;
-    if (panel.yAxis) attributes.yAxis = panel.yAxis;
-    if (panel.rows) attributes.rows = panel.rows;
-    if (panel.columns) attributes.columns = panel.columns;
-    if (panel.tag_by) attributes.tag_by = panel.tag_by;
-    if (panel.region) attributes.region = panel.region;
 
     return {
       type: 'lens',
@@ -345,8 +402,15 @@ Uses the Kibana as-code API format (Kibana 9.4+). Panels use semantic chart type
 Above-the-fold on 1080p ≈ 20-24 rows. Design for density: 8-12 panels above the fold.
 
 **Chart types:** metric, xy (line/bar/area), gauge, heatmap, tagcloud, datatable, region_map
-**Dataset types:** esql (ES|QL query), dataView (data view ID with aggregation operations)
+**Dataset types:** esql (ES|QL query), dataView (data view ID)
 **Markdown:** Use type "DASHBOARD_MARKDOWN" with a "content" field.
+
+**CRITICAL schema rules for the as-code API (Kibana 9.4+):**
+- **metric panels (ES|QL):** dataset at panel level, metrics array with {type:"primary", operation:"value", column:"col"}
+- **xy panels:** dataset must be on EACH LAYER (not panel level). Use breakdown_by (not breakdown). ES|QL y-axis columns accept only operation+column (no label).
+- **gauge panels (ES|QL):** dataset at panel level, metric object with {operation:"value", column:"col"}
+- **datatable panels (ES|QL):** dataset at panel level, metrics with {operation:"value", column}, rows with {operation:"value", column}
+- **ES|QL y-axis columns in xy layers do NOT support "label" — the column name from the query is used.
 
 Requires KIBANA_URL and auth (KIBANA_API_KEY, or KIBANA_USERNAME + KIBANA_PASSWORD).`;
 

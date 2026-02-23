@@ -78,6 +78,7 @@ describe('kibana_create_dashboard', () => {
       expect(body['feature_flags.overrides']).toEqual({
         'dashboardAgent.enabled': true,
         'lens.apiFormat': true,
+        'lens.enable_esql': true,
       });
       expect(opts.headers['Elastic-Api-Version']).toBe('1');
     });
@@ -165,7 +166,7 @@ describe('kibana_create_dashboard', () => {
       expect(panel.config.attributes).toBeDefined();
       expect(panel.config.attributes.type).toBe('metric');
       expect(panel.config.attributes.dataset).toEqual({ type: 'esql', query: 'FROM logs | STATS count = COUNT()' });
-      expect(panel.config.attributes.metric).toEqual({ operation: 'value', column: 'count' });
+      expect(panel.config.attributes.metrics).toEqual([{ type: 'primary', operation: 'value', column: 'count' }]);
     });
 
     it('builds XY chart with layers', async () => {
@@ -174,11 +175,12 @@ describe('kibana_create_dashboard', () => {
         panels: [{
           type: 'xy' as const,
           title: 'Events Over Time',
-          dataset: { type: 'esql' as const, query: 'FROM logs | STATS count = COUNT() BY bucket = DATE_TRUNC(1 hour, @timestamp)' },
           layers: [{
             type: 'line' as const,
+            dataset: { type: 'esql' as const, query: 'FROM logs | STATS count = COUNT() BY bucket = DATE_TRUNC(1 hour, @timestamp)' },
             x: { operation: 'value', column: 'bucket' },
             y: [{ operation: 'value', column: 'count' }],
+            breakdown_by: { operation: 'value', column: 'host' },
           }],
         }],
       };
@@ -195,7 +197,10 @@ describe('kibana_create_dashboard', () => {
       expect(attrs.type).toBe('xy');
       expect(attrs.layers).toHaveLength(1);
       expect(attrs.layers[0].type).toBe('line');
+      expect(attrs.layers[0].dataset).toEqual({ type: 'esql', query: 'FROM logs | STATS count = COUNT() BY bucket = DATE_TRUNC(1 hour, @timestamp)' });
       expect(attrs.layers[0].x).toEqual({ operation: 'value', column: 'bucket' });
+      expect(attrs.layers[0].y).toEqual([{ operation: 'value', column: 'count' }]);
+      expect(attrs.layers[0].breakdown_by).toEqual({ operation: 'value', column: 'host' });
     });
 
     it('sends custom dashboard ID when provided', async () => {

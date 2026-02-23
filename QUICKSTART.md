@@ -77,3 +77,45 @@ Restart Cursor (or reload MCP). The **elastic** tools and skills will appear. In
 | Cloud + create project| Set `ELASTIC_CLOUD_API_KEY` in `env`; AI can run `create_cloud_project` |
 
 Same single config block above; only the `env` values change. No extra setup.
+
+---
+
+## O11Y Workflows — Discover and configure in one conversation
+
+Once connected, you can use **O11Y Workflows** to automatically discover your data and create dashboards and SLOs:
+
+### Quick example
+
+Say to Cursor:
+
+> *"Discover what observability data I have and create dashboards for it"*
+
+The agent will:
+1. Call `discover_o11y_data` to scan for APM services, host metrics, and log streams
+2. Call `get_data_summary` to analyze and recommend dashboards + SLOs
+3. Ask you which recommendations to apply
+4. Create dashboards via `kibana_create_dashboard` and SLOs via `create_slo`
+
+### Available workflows
+
+| Workflow | What it does |
+|----------|-------------|
+| `full-o11y-setup` | Discover all data → create dashboards + SLOs |
+| `service-dashboard` | Create an APM service overview dashboard |
+| `slo-from-apm` | Create SLOs from APM latency and error data |
+| `infrastructure-overview` | Create a host metrics dashboard |
+
+### Requirements for O11Y tools
+
+Add `KIBANA_URL` and `KIBANA_API_KEY` to your MCP config env to enable dashboard and SLO creation:
+
+```json
+{
+  "env": {
+    "ES_URL": "...",
+    "ES_API_KEY": "...",
+    "KIBANA_URL": "https://your-kibana-url:5601",
+    "KIBANA_API_KEY": "your-kibana-api-key"
+  }
+}
+```
