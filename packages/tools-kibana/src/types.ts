@@ -21,16 +21,22 @@ export function getKibanaUrl(): string | null {
 
 export async function kibanaFetch(
   path: string,
-  options: { method?: string; body?: unknown } = {}
+  options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}
 ): Promise<{ ok: boolean; data?: unknown; error?: string }> {
   const base = getKibanaUrl();
   if (!base) return { ok: false, error: 'KIBANA_URL not set' };
   const apiKey = process.env.KIBANA_API_KEY ?? process.env.ES_API_KEY;
+  const username = process.env.KIBANA_USERNAME ?? process.env.ES_USERNAME;
+  const password = process.env.KIBANA_PASSWORD ?? process.env.ES_PASSWORD;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'kbn-xsrf': 'true',
+    ...options.headers,
   };
-  if (apiKey) headers.Authorization = `ApiKey ${apiKey}`;
+  if (apiKey) {
+    headers.Authorization = `ApiKey ${apiKey}`;
+  } else if (username && password) {
+    headers.Authorization = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;  }
   try {
     const url = `${base.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
     const res = await fetch(url, {

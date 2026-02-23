@@ -65,8 +65,8 @@ describe('MCP server registration', () => {
     registerAgentBuilderTools(server as unknown as import('@elastic-cursor-plugin/tools-agent-builder').ToolRegistrationContext);
     registerKibanaTools(server as unknown as import('@elastic-cursor-plugin/tools-kibana').ToolRegistrationContext);
 
-    // 14 + 6 + 6 + 7 + 5 + 4 + 5 = 47 (deploy_telemetry_dashboard is registered in main, not here)
-    expect(server.tools.size).toBe(47);
+    // 14 + 6 + 6 + 7 + 5 + 4 + 8 = 50 (deploy_telemetry_dashboard is registered in main, not here)
+    expect(server.tools.size).toBe(50);
     expect(server.tools.has('list_indices')).toBe(true);
     expect(server.tools.has('search')).toBe(true);
     expect(server.tools.has('esql_query')).toBe(true);
@@ -81,6 +81,9 @@ describe('MCP server registration', () => {
     expect(server.tools.has('kibana_list_dashboards')).toBe(true);
     expect(server.tools.has('kibana_info')).toBe(true);
     expect(server.tools.has('kibana_create_dashboard')).toBe(true);
+    expect(server.tools.has('kibana_get_dashboard')).toBe(true);
+    expect(server.tools.has('kibana_update_dashboard')).toBe(true);
+    expect(server.tools.has('kibana_delete_dashboard')).toBe(true);
     expect(server.tools.has('list_agent_builder_tools')).toBe(true);
     expect(server.tools.has('create_agent_builder_tool')).toBe(true);
   });

@@ -13,6 +13,9 @@ import { registerListDashboards } from './list-dashboards.js';
 import { registerListSavedObjects } from './list-saved-objects.js';
 import { registerKibanaInfo } from './kibana-info.js';
 import { registerCreateDashboard } from './create-dashboard.js';
+import { registerGetDashboard } from './get-dashboard.js';
+import { registerUpdateDashboard } from './update-dashboard.js';
+import { registerDeleteDashboard } from './delete-dashboard.js';
 
 export type { ToolRegistrationContext } from './types.js';
 
@@ -22,4 +25,7 @@ export function registerAll(server: ToolRegistrationContext): void {
   registerListSavedObjects(server);
   registerKibanaInfo(server);
   registerCreateDashboard(server);
+  registerGetDashboard(server);
+  registerUpdateDashboard(server);
+  registerDeleteDashboard(server);
 }

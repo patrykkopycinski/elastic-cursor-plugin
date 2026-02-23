@@ -15,17 +15,8 @@ function mockResponse(ok: boolean, data: unknown, status = ok ? 200 : 400) {
   return { ok, status, json: async () => data };
 }
 
-/**
- * Call sequence when the feature flag PUT fails:
- *   [0] PUT /internal/core/_settings  -> fail
- *   [1] GET /api/status               -> fail (makes tryEnableDashboardAgent return 'unavailable')
- *   [2] ... Tier 2 or 3 calls
- */
 function mockFeatureFlagUnavailable() {
-  return [
-    mockResponse(false, {}, 403),
-    mockResponse(false, {}, 503),
-  ];
+  return [mockResponse(false, {}, 403)];
 }
 
 describe('kibana_create_dashboard', () => {
@@ -36,7 +27,7 @@ describe('kibana_create_dashboard', () => {
   const minimalInput = {
     title: 'Test Dashboard',
     panels: [
-      { title: 'Panel 1', visualization_type: 'lnsXY' as const, esql_query: 'FROM logs-*' },
+      { type: 'metric' as const, title: 'Count', dataset: { type: 'esql' as const, query: 'FROM logs | STATS count = COUNT()' }, metric: { operation: 'value', column: 'count' } },
     ],
   };
 
@@ -70,11 +61,11 @@ describe('kibana_create_dashboard', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  describe('Tier 1: Dashboard Agent feature flag', () => {
-    it('attempts to enable the feature flag first', async () => {
+  describe('feature flags', () => {
+    it('attempts to enable lens.apiFormat and dashboardAgent.enabled', async () => {
       fetchMock
         .mockResolvedValueOnce(mockResponse(true, { ok: true }))
-        .mockResolvedValueOnce(mockResponse(true, { id: 'dash-1' }));
+        .mockResolvedValueOnce(mockResponse(true, { id: 'dash-1', data: { title: 'Test', panels: [] } }));
 
       const server = createCaptureServer();
       registerCreateDashboard(server);
@@ -84,29 +75,31 @@ describe('kibana_create_dashboard', () => {
       expect(url).toContain('/internal/core/_settings');
       expect(opts.method).toBe('PUT');
       const body = JSON.parse(opts.body);
-      expect(body).toEqual({
-        'feature_flags.overrides': { 'dashboardAgent.enabled': true },
+      expect(body['feature_flags.overrides']).toEqual({
+        'dashboardAgent.enabled': true,
+        'lens.apiFormat': true,
       });
+      expect(opts.headers['Elastic-Api-Version']).toBe('1');
     });
 
-    it('includes success note when flag is enabled', async () => {
+    it('includes success note when flags are enabled', async () => {
       fetchMock
         .mockResolvedValueOnce(mockResponse(true, { ok: true }))
-        .mockResolvedValueOnce(mockResponse(true, { id: 'dash-1' }));
+        .mockResolvedValueOnce(mockResponse(true, { id: 'dash-1', data: { title: 'Test', panels: [] } }));
 
       const server = createCaptureServer();
       registerCreateDashboard(server);
       const result = await invokeTool(server, 'kibana_create_dashboard', minimalInput);
 
       expect(result.isError).toBeFalsy();
-      expect(result.content[0].text).toContain('Dashboard Agent feature flag enabled');
+      expect(result.content[0].text).toContain('Feature flags enabled');
     });
   });
 
-  describe('Tier 2: Dashboard CRUD API', () => {
-    it('creates dashboard via Dashboard API when available', async () => {
+  describe('as-code API (primary)', () => {
+    it('creates dashboard via as-code API with Elastic-Api-Version header', async () => {
       for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'dash-abc' }));
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'dash-abc', data: { title: 'Test', panels: [{}] } }));
 
       const server = createCaptureServer();
       registerCreateDashboard(server);
@@ -114,102 +107,169 @@ describe('kibana_create_dashboard', () => {
 
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('dash-abc');
-      expect(result.content[0].text).toContain('Dashboard CRUD API (Tier 2)');
+      expect(result.content[0].text).toContain('as-code API');
       expect(result.content[0].text).toContain('/app/dashboards#/view/dash-abc');
 
-      const [apiUrl, apiOpts] = fetchMock.mock.calls[2];
-      expect(apiUrl).toContain('/api/dashboards?apiVersion=1');
+      const [apiUrl, apiOpts] = fetchMock.mock.calls[1];
+      expect(apiUrl).toContain('/api/dashboards');
       expect(apiOpts.method).toBe('POST');
-      const body = JSON.parse(apiOpts.body);
-      expect(body.title).toBe('Test Dashboard');
-      expect(body.panels).toHaveLength(1);
-      expect(body.panels[0].type).toBe('lens');
-      expect(body.time_range).toEqual({ from: 'now-15m', to: 'now' });
+      expect(apiOpts.headers['Elastic-Api-Version']).toBe('1');
     });
 
-    it('sends correct panel layout with grid positions', async () => {
+    it('wraps body in { data: { ... } } envelope', async () => {
+      for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd1', data: { panels: [] } }));
+
+      const server = createCaptureServer();
+      registerCreateDashboard(server);
+      await invokeTool(server, 'kibana_create_dashboard', minimalInput);
+
+      const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+      expect(body.data).toBeDefined();
+      expect(body.data.title).toBe('Test Dashboard');
+      expect(body.data.panels).toHaveLength(1);
+      expect(body.data.time_range).toEqual({ from: 'now-24h', to: 'now' });
+    });
+
+    it('uses DASHBOARD_MARKDOWN type for markdown panels', async () => {
       const input = {
-        title: 'Multi-Panel',
-        panels: [
-          { title: 'P1', visualization_type: 'lnsXY' as const, height: 10 },
-          { title: 'P2', visualization_type: 'lnsPie' as const, height: 20 },
-        ],
+        title: 'MD Dashboard',
+        panels: [{ type: 'DASHBOARD_MARKDOWN' as const, content: '# Hello World' }],
       };
 
       for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd1' }));
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd2', data: { panels: [] } }));
 
       const server = createCaptureServer();
       registerCreateDashboard(server);
       await invokeTool(server, 'kibana_create_dashboard', input);
 
-      const body = JSON.parse(fetchMock.mock.calls[2][1].body);
-      expect(body.panels[0].grid).toEqual({ x: 0, y: 0, w: 24, h: 10 });
-      expect(body.panels[1].grid).toEqual({ x: 0, y: 10, w: 24, h: 20 });
+      const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+      expect(body.data.panels[0].type).toBe('DASHBOARD_MARKDOWN');
+      expect(body.data.panels[0].config.content).toBe('# Hello World');
+      expect(body.data.panels[0].grid.w).toBe(48);
+      expect(body.data.panels[0].grid.h).toBe(4);
     });
 
-    it('handles markdown panels correctly', async () => {
+    it('builds inline Lens attributes for chart panels', async () => {
+      for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd3', data: { panels: [] } }));
+
+      const server = createCaptureServer();
+      registerCreateDashboard(server);
+      await invokeTool(server, 'kibana_create_dashboard', minimalInput);
+
+      const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+      const panel = body.data.panels[0];
+      expect(panel.type).toBe('lens');
+      expect(panel.config.attributes).toBeDefined();
+      expect(panel.config.attributes.type).toBe('metric');
+      expect(panel.config.attributes.dataset).toEqual({ type: 'esql', query: 'FROM logs | STATS count = COUNT()' });
+      expect(panel.config.attributes.metric).toEqual({ operation: 'value', column: 'count' });
+    });
+
+    it('builds XY chart with layers', async () => {
       const input = {
-        title: 'Markdown Dashboard',
-        panels: [
-          {
-            title: 'Notes',
-            visualization_type: 'markdown' as const,
-            markdown_content: '# Hello World',
-          },
-        ],
+        title: 'XY Dashboard',
+        panels: [{
+          type: 'xy' as const,
+          title: 'Events Over Time',
+          dataset: { type: 'esql' as const, query: 'FROM logs | STATS count = COUNT() BY bucket = DATE_TRUNC(1 hour, @timestamp)' },
+          layers: [{
+            type: 'line' as const,
+            x: { operation: 'value', column: 'bucket' },
+            y: [{ operation: 'value', column: 'count' }],
+          }],
+        }],
       };
 
       for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd2' }));
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd4', data: { panels: [] } }));
 
       const server = createCaptureServer();
       registerCreateDashboard(server);
       await invokeTool(server, 'kibana_create_dashboard', input);
 
-      const body = JSON.parse(fetchMock.mock.calls[2][1].body);
-      expect(body.panels[0].type).toBe('visualization');
-      expect(body.panels[0].config.savedVis.type).toBe('markdown');
-      expect(body.panels[0].config.savedVis.params.markdown).toBe('# Hello World');
+      const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+      const attrs = body.data.panels[0].config.attributes;
+      expect(attrs.type).toBe('xy');
+      expect(attrs.layers).toHaveLength(1);
+      expect(attrs.layers[0].type).toBe('line');
+      expect(attrs.layers[0].x).toEqual({ operation: 'value', column: 'bucket' });
+    });
+
+    it('sends custom dashboard ID when provided', async () => {
+      const input = { ...minimalInput, id: 'custom-id-123' };
+
+      for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'custom-id-123', data: { panels: [] } }));
+
+      const server = createCaptureServer();
+      registerCreateDashboard(server);
+      await invokeTool(server, 'kibana_create_dashboard', input);
+
+      const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+      expect(body.id).toBe('custom-id-123');
+    });
+
+    it('uses 48-column grid with correct defaults', async () => {
+      const input = {
+        title: 'Grid Test',
+        panels: [
+          { type: 'DASHBOARD_MARKDOWN' as const, content: 'Header' },
+          { type: 'metric' as const, title: 'M1', metric: { column: 'count' } },
+          { type: 'metric' as const, title: 'M2', metric: { column: 'avg' }, grid: { x: 24, w: 24, h: 8 } },
+        ],
+      };
+
+      for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd5', data: { panels: [] } }));
+
+      const server = createCaptureServer();
+      registerCreateDashboard(server);
+      await invokeTool(server, 'kibana_create_dashboard', input);
+
+      const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+      const panels = body.data.panels;
+      expect(panels[0].grid).toEqual({ x: 0, y: 0, w: 48, h: 4 });
+      expect(panels[1].grid).toEqual({ x: 0, y: 4, w: 24, h: 10 });
+      expect(panels[2].grid).toEqual({ x: 24, y: 14, w: 24, h: 8 });
     });
 
     it('includes tags when provided', async () => {
-      const input = { ...minimalInput, tags: ['production', 'metrics'] };
+      const input = { ...minimalInput, tags: ['production', 'ops'] };
 
       for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd3' }));
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd6', data: { panels: [] } }));
 
       const server = createCaptureServer();
       registerCreateDashboard(server);
       await invokeTool(server, 'kibana_create_dashboard', input);
 
-      const body = JSON.parse(fetchMock.mock.calls[2][1].body);
-      expect(body.tags).toEqual(['production', 'metrics']);
+      const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+      expect(body.data.tags).toEqual(['production', 'ops']);
     });
 
-    it('uses custom time range', async () => {
-      const input = { ...minimalInput, time_from: 'now-7d', time_to: 'now' };
+    it('sends space in spaces array', async () => {
+      const input = { ...minimalInput, space: 'my-space' };
 
       for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd4' }));
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'd7', data: { panels: [] } }));
 
       const server = createCaptureServer();
       registerCreateDashboard(server);
       await invokeTool(server, 'kibana_create_dashboard', input);
 
-      const body = JSON.parse(fetchMock.mock.calls[2][1].body);
-      expect(body.time_range).toEqual({ from: 'now-7d', to: 'now' });
+      const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+      expect(body.spaces).toEqual(['my-space']);
     });
   });
 
-  describe('Tier 3: Saved Objects fallback', () => {
-    it('falls back to Saved Objects when Dashboard API fails', async () => {
+  describe('saved objects fallback', () => {
+    it('falls back when as-code API fails', async () => {
       for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      // [2] Dashboard API fails
       fetchMock.mockResolvedValueOnce(mockResponse(false, { message: 'Not Found' }, 404));
-      // [3] Lens SO created
       fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'lens-1' }));
-      // [4] Dashboard SO created
       fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'dash-so-1' }));
 
       const server = createCaptureServer();
@@ -218,41 +278,23 @@ describe('kibana_create_dashboard', () => {
 
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('dash-so-1');
-      expect(result.content[0].text).toContain('Saved Objects fallback (Tier 3)');
+      expect(result.content[0].text).toContain('Saved Objects fallback');
       expect(result.content[0].text).toContain('lens-1');
 
-      const [lensUrl, lensOpts] = fetchMock.mock.calls[3];
+      const [lensUrl] = fetchMock.mock.calls[2];
       expect(lensUrl).toContain('/api/saved_objects/lens');
-      expect(lensOpts.method).toBe('POST');
-      const lensBody = JSON.parse(lensOpts.body);
-      expect(lensBody.attributes.title).toBe('Panel 1');
-      expect(lensBody.attributes.visualizationType).toBe('lnsXY');
-
-      const [dashUrl] = fetchMock.mock.calls[4];
+      const [dashUrl] = fetchMock.mock.calls[3];
       expect(dashUrl).toContain('/api/saved_objects/dashboard');
-      const dashBody = JSON.parse(fetchMock.mock.calls[4][1].body);
-      expect(dashBody.attributes.title).toBe('Test Dashboard');
-      expect(dashBody.attributes.timeRestore).toBe(true);
-
-      const panelsJSON = JSON.parse(dashBody.attributes.panelsJSON);
-      expect(panelsJSON).toHaveLength(1);
-      expect(panelsJSON[0].type).toBe('lens');
-      expect(dashBody.references).toHaveLength(1);
-      expect(dashBody.references[0].id).toBe('lens-1');
     });
 
-    it('creates markdown panels inline without Lens SO', async () => {
+    it('skips Lens SO creation for DASHBOARD_MARKDOWN panels', async () => {
       const input = {
         title: 'MD Only',
-        panels: [
-          { title: 'Text', visualization_type: 'markdown' as const, markdown_content: 'Hi' },
-        ],
+        panels: [{ type: 'DASHBOARD_MARKDOWN' as const, content: 'Hi' }],
       };
 
       for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      // [2] Dashboard API fails
       fetchMock.mockResolvedValueOnce(mockResponse(false, {}, 404));
-      // [3] Dashboard SO created (no Lens SO needed for markdown)
       fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'dash-md' }));
 
       const server = createCaptureServer();
@@ -261,37 +303,15 @@ describe('kibana_create_dashboard', () => {
 
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('dash-md');
-
-      const dashBody = JSON.parse(fetchMock.mock.calls[3][1].body);
-      const panelsJSON = JSON.parse(dashBody.attributes.panelsJSON);
-      expect(panelsJSON[0].type).toBe('visualization');
-      expect(panelsJSON[0].embeddableConfig.savedVis.params.markdown).toBe('Hi');
-      expect(dashBody.references).toHaveLength(0);
-    });
-
-    it('returns error when Lens SO creation fails', async () => {
-      for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      // [2] Dashboard API fails
-      fetchMock.mockResolvedValueOnce(mockResponse(false, {}, 404));
-      // [3] Lens SO creation fails
-      fetchMock.mockResolvedValueOnce(mockResponse(false, { message: 'Forbidden' }, 403));
-
-      const server = createCaptureServer();
-      registerCreateDashboard(server);
-      const result = await invokeTool(server, 'kibana_create_dashboard', minimalInput);
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('All strategies failed');
+      expect(fetchMock.mock.calls).toHaveLength(3);
     });
   });
 
   describe('all strategies fail', () => {
-    it('returns comprehensive error with troubleshooting tips', async () => {
+    it('returns comprehensive error', async () => {
       for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      // [2] Dashboard API fails
-      fetchMock.mockResolvedValueOnce(mockResponse(false, { message: 'API error' }, 500));
-      // [3] Lens SO fails
-      fetchMock.mockResolvedValueOnce(mockResponse(false, { message: 'SO error' }, 500));
+      fetchMock.mockResolvedValueOnce(mockResponse(false, {}, 500));
+      fetchMock.mockResolvedValueOnce(mockResponse(false, {}, 500));
 
       const server = createCaptureServer();
       registerCreateDashboard(server);
@@ -300,39 +320,23 @@ describe('kibana_create_dashboard', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('All strategies failed');
       expect(result.content[0].text).toContain('Troubleshooting');
-      expect(result.content[0].text).toContain('KIBANA_URL');
+      expect(result.content[0].text).toContain('lens.apiFormat');
     });
   });
 
-  describe('auth headers', () => {
-    it('sends ApiKey authorization header on all requests', async () => {
+  describe('auth', () => {
+    it('sends Elastic-Api-Version header on as-code API calls', async () => {
       for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'dash-1' }));
+      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'dash-1', data: { panels: [] } }));
 
       const server = createCaptureServer();
       registerCreateDashboard(server);
       await invokeTool(server, 'kibana_create_dashboard', minimalInput);
 
-      for (const call of fetchMock.mock.calls) {
-        expect(call[1].headers.Authorization).toBe('ApiKey test-api-key');
-        expect(call[1].headers['kbn-xsrf']).toBe('true');
-      }
-    });
-
-    it('uses ES_API_KEY when KIBANA_API_KEY is not set', async () => {
-      delete process.env.KIBANA_API_KEY;
-      process.env.ES_API_KEY = 'es-fallback-key';
-
-      for (const m of mockFeatureFlagUnavailable()) fetchMock.mockResolvedValueOnce(m);
-      fetchMock.mockResolvedValueOnce(mockResponse(true, { id: 'dash-1' }));
-
-      const server = createCaptureServer();
-      registerCreateDashboard(server);
-      await invokeTool(server, 'kibana_create_dashboard', minimalInput);
-
-      for (const call of fetchMock.mock.calls) {
-        expect(call[1].headers.Authorization).toBe('ApiKey es-fallback-key');
-      }
+      const asCodeCall = fetchMock.mock.calls[1];
+      expect(asCodeCall[1].headers['Elastic-Api-Version']).toBe('1');
+      expect(asCodeCall[1].headers.Authorization).toBe('ApiKey test-api-key');
+      expect(asCodeCall[1].headers['kbn-xsrf']).toBe('true');
     });
   });
 });
