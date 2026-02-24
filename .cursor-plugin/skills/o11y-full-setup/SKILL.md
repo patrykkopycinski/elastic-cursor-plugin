@@ -33,7 +33,7 @@ Ask the user which recommended dashboards they want to create:
 - Allow the user to customize titles or skip entirely
 
 ### 4. Create Dashboards
-For each approved dashboard, call `kibana_create_dashboard` with the recommended configuration.
+For each approved dashboard, call `kibana_api` with `POST /api/dashboards/dashboard` and the recommended configuration as the request body.
 Report each created dashboard with its URL.
 
 ### 5. User Decision Point — SLOs
@@ -43,7 +43,7 @@ Ask the user which recommended SLOs they want to create:
 - Allow the user to adjust targets before creation
 
 ### 6. Create SLOs
-For each approved SLO, call `create_slo` with the recommended configuration.
+For each approved SLO, call `kibana_api` with `POST /api/observability/slos` and the configured parameters as the request body.
 Report each created SLO with its ID and URL.
 
 ### 7. Summary
@@ -54,12 +54,13 @@ Present a final summary:
 - Suggested next steps (set up alerts, add more services, etc.)
 
 ## Tools Used
-- `discover_o11y_data`
-- `get_data_summary`
-- `kibana_create_dashboard`
-- `create_slo`
+- `discover_o11y_data` — discover available O11Y data
+- `get_data_summary` — generate summary with recommendations
+- `kibana_api` — create dashboards (`POST /api/dashboards/dashboard`) and SLOs (`POST /api/observability/slos`)
+
+## API References
+- `elastic://docs/api/kibana` — Kibana REST API reference for dashboard and SLO endpoints
 
 ## Prerequisites
 - `ES_URL` and `ES_API_KEY` (or basic auth) configured
-- `KIBANA_URL` and `KIBANA_API_KEY` (or basic auth) configured
 - At least some O11Y data flowing into Elasticsearch

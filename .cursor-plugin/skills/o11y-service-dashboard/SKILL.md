@@ -38,7 +38,7 @@ Ask the user:
 - Whether to include related infrastructure or log panels (if data exists)
 
 ### 5. Create Dashboard
-Call `kibana_create_dashboard` with the service-overview template configuration populated with the service data.
+Call `kibana_api` with `POST /api/dashboards/dashboard` and the service-overview template configuration populated with the service data as the request body.
 
 ### 6. Report
 Present:
@@ -47,11 +47,13 @@ Present:
 - Suggested follow-ups: create an SLO, set up alerts, add to a composite dashboard
 
 ## Tools Used
-- `discover_o11y_data`
-- `get_data_summary`
-- `kibana_create_dashboard`
+- `discover_o11y_data` — discover APM services and their data
+- `get_data_summary` — generate service profile and panel suggestions
+- `kibana_api` — create the dashboard (`POST /api/dashboards/dashboard`)
+
+## API References
+- `elastic://docs/api/kibana` — Kibana REST API reference for dashboard endpoints
 
 ## Prerequisites
 - `ES_URL` and `ES_API_KEY` configured
-- `KIBANA_URL` and `KIBANA_API_KEY` configured
 - APM data for at least one service

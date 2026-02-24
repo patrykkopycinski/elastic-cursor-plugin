@@ -30,11 +30,11 @@ Ask the user:
   - Any tags to apply
 
 ### 4. Check Existing SLOs
-Call `list_slos` to check for duplicates.
+Call `kibana_api` with `GET /api/observability/slos` to check for duplicates.
 If any existing SLOs overlap with selections, warn the user and ask whether to skip or create anyway.
 
 ### 5. Create SLOs
-For each approved SLO, call `create_slo` with the configured parameters.
+For each approved SLO, call `kibana_api` with `POST /api/observability/slos` and the configured parameters as the request body.
 
 Report each created SLO:
 - Name and ID
@@ -48,13 +48,14 @@ Present:
 - Suggested next steps: monitor burn rates, set up burn rate alerts, create an SLO dashboard
 
 ## Tools Used
-- `discover_o11y_data`
-- `get_data_summary`
-- `list_slos`
-- `create_slo`
+- `discover_o11y_data` — discover APM services and metrics for SLO candidates
+- `get_data_summary` — generate SLO recommendations
+- `kibana_api` — list existing SLOs (`GET /api/observability/slos`) and create new ones (`POST /api/observability/slos`)
+
+## API References
+- `elastic://docs/api/kibana` — Kibana REST API reference for SLO endpoints (`/api/observability/slos`)
 
 ## Prerequisites
 - `ES_URL` and `ES_API_KEY` configured
-- `KIBANA_URL` and `KIBANA_API_KEY` configured
 - SLO feature enabled in Kibana (Observability → SLOs)
 - APM data or custom metrics flowing

@@ -7,13 +7,7 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-export interface ToolRegistrationContext {
-  registerTool(
-    name: string,
-    definition: { title: string; description: string; inputSchema: unknown },
-    handler: (args: unknown) => Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }>
-  ): void;
-}
+export type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
 
 export interface WorkflowDefinition {
   name: string;

@@ -11,14 +11,9 @@
  * Smoke test: all tool packages register without throw and expected tool count/names.
  */
 import { describe, it, expect } from 'vitest';
-import type { ToolRegistrationContext } from '@elastic-cursor-plugin/tools-elasticsearch';
-import { registerAll as registerElasticsearchTools } from '@elastic-cursor-plugin/tools-elasticsearch';
-import { registerAll as registerCloudTools } from '@elastic-cursor-plugin/tools-cloud';
-import { registerAll as registerObservabilityTools } from '@elastic-cursor-plugin/tools-observability';
-import { registerAll as registerSecurityTools } from '@elastic-cursor-plugin/tools-security';
-import { registerAll as registerSearchAppsTools } from '@elastic-cursor-plugin/tools-search-apps';
-import { registerAll as registerAgentBuilderTools } from '@elastic-cursor-plugin/tools-agent-builder';
-import { registerAll as registerKibanaTools } from '@elastic-cursor-plugin/tools-kibana';
+import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
+import { registerAll as registerGatewayTools } from '@elastic-cursor-plugin/tools-gateway';
+import { registerAll as registerSmartTools } from '@elastic-cursor-plugin/tools-smart';
 import { registerAll as registerWorkflowTools } from '@elastic-cursor-plugin/tools-workflows';
 import { registerDocsResources } from '@elastic-cursor-plugin/docs-provider';
 import type { Client } from '@elastic/elasticsearch';
@@ -43,59 +38,68 @@ describe('MCP server registration', () => {
     const mockClient = {} as Client;
 
     expect(() => {
-      registerElasticsearchTools(server as unknown as ToolRegistrationContext, mockClient);
-      registerCloudTools(server as unknown as import('@elastic-cursor-plugin/tools-cloud').ToolRegistrationContext);
-      registerObservabilityTools(server as unknown as import('@elastic-cursor-plugin/tools-observability').ToolRegistrationContext);
-      registerSecurityTools(server as unknown as import('@elastic-cursor-plugin/tools-security').ToolRegistrationContext);
-      registerSearchAppsTools(server as unknown as import('@elastic-cursor-plugin/tools-search-apps').ToolRegistrationContext);
-      registerAgentBuilderTools(server as unknown as import('@elastic-cursor-plugin/tools-agent-builder').ToolRegistrationContext);
-      registerKibanaTools(server as unknown as import('@elastic-cursor-plugin/tools-kibana').ToolRegistrationContext);
+      registerGatewayTools(server as unknown as ToolRegistrationContext, {
+        esClient: mockClient,
+        hasKibana: true,
+        hasCloud: true,
+      });
+      registerSmartTools(server as unknown as ToolRegistrationContext);
       registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext);
       registerDocsResources(server as unknown as import('@elastic-cursor-plugin/docs-provider').ServerLike);
     }).not.toThrow();
   });
 
-  it('registers expected number of tools (ES + Cloud + Obs + Security + SearchApps + AgentBuilder + Kibana + Workflows)', () => {
+  it('registers expected gateway + smart + workflow tools', () => {
     const server = createCaptureServer();
     const mockClient = {} as Client;
 
-    registerElasticsearchTools(server as unknown as ToolRegistrationContext, mockClient);
-    registerCloudTools(server as unknown as import('@elastic-cursor-plugin/tools-cloud').ToolRegistrationContext);
-    registerObservabilityTools(server as unknown as import('@elastic-cursor-plugin/tools-observability').ToolRegistrationContext);
-    registerSecurityTools(server as unknown as import('@elastic-cursor-plugin/tools-security').ToolRegistrationContext);
-    registerSearchAppsTools(server as unknown as import('@elastic-cursor-plugin/tools-search-apps').ToolRegistrationContext);
-    registerAgentBuilderTools(server as unknown as import('@elastic-cursor-plugin/tools-agent-builder').ToolRegistrationContext);
-    registerKibanaTools(server as unknown as import('@elastic-cursor-plugin/tools-kibana').ToolRegistrationContext);
+    registerGatewayTools(server as unknown as ToolRegistrationContext, {
+      esClient: mockClient,
+      hasKibana: true,
+      hasCloud: true,
+    });
+    registerSmartTools(server as unknown as ToolRegistrationContext);
     registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext);
 
-    // 14 + 6 + 14 + 7 + 5 + 4 + 8 + 3 = 61 (deploy_telemetry_dashboard is registered in main, not here)
-    expect(server.tools.size).toBe(61);
-    expect(server.tools.has('list_indices')).toBe(true);
-    expect(server.tools.has('search')).toBe(true);
+    // Gateway: elasticsearch_api, esql_query, kibana_api, cloud_api = 4
+    expect(server.tools.has('elasticsearch_api')).toBe(true);
     expect(server.tools.has('esql_query')).toBe(true);
-    expect(server.tools.has('create_cloud_project')).toBe(true);
-    expect(server.tools.has('get_deployment_guide')).toBe(true);
-    expect(server.tools.has('get_connection_config')).toBe(true);
-    expect(server.tools.has('create_alert_rule')).toBe(true);
-    expect(server.tools.has('list_alert_rules')).toBe(true);
-    expect(server.tools.has('create_detection_rule')).toBe(true);
-    expect(server.tools.has('list_detection_rules')).toBe(true);
-    expect(server.tools.has('kibana_list_data_views')).toBe(true);
-    expect(server.tools.has('kibana_list_dashboards')).toBe(true);
-    expect(server.tools.has('kibana_info')).toBe(true);
-    expect(server.tools.has('kibana_create_dashboard')).toBe(true);
-    expect(server.tools.has('kibana_get_dashboard')).toBe(true);
-    expect(server.tools.has('kibana_update_dashboard')).toBe(true);
-    expect(server.tools.has('kibana_delete_dashboard')).toBe(true);
-    expect(server.tools.has('list_agent_builder_tools')).toBe(true);
-    expect(server.tools.has('create_agent_builder_tool')).toBe(true);
+    expect(server.tools.has('kibana_api')).toBe(true);
+    expect(server.tools.has('cloud_api')).toBe(true);
+
+    // Smart tools (13 total)
     expect(server.tools.has('discover_o11y_data')).toBe(true);
     expect(server.tools.has('get_data_summary')).toBe(true);
-    expect(server.tools.has('create_slo')).toBe(true);
-    expect(server.tools.has('list_slos')).toBe(true);
     expect(server.tools.has('create_iot_dashboard')).toBe(true);
+    expect(server.tools.has('setup_apm')).toBe(true);
+    expect(server.tools.has('setup_log_shipping')).toBe(true);
+    expect(server.tools.has('create_alert_rule')).toBe(true);
+    expect(server.tools.has('create_dashboard')).toBe(true);
+    expect(server.tools.has('observability_info')).toBe(true);
+    expect(server.tools.has('siem_quickstart')).toBe(true);
+    expect(server.tools.has('generate_search_ui')).toBe(true);
+    expect(server.tools.has('get_deployment_guide')).toBe(true);
+    expect(server.tools.has('get_connection_config')).toBe(true);
+    expect(server.tools.has('kibana_info')).toBe(true);
+
+    // Workflow tools (3)
     expect(server.tools.has('list_workflows')).toBe(true);
     expect(server.tools.has('run_workflow')).toBe(true);
     expect(server.tools.has('save_workflow')).toBe(true);
+
+    // 4 gateway + 13 smart + 3 workflow = 20
+    expect(server.tools.size).toBe(20);
+  });
+
+  it('conditionally registers gateway tools based on options', () => {
+    const server = createCaptureServer();
+
+    registerGatewayTools(server as unknown as ToolRegistrationContext, {
+      esClient: null,
+      hasKibana: false,
+      hasCloud: false,
+    });
+
+    expect(server.tools.size).toBe(0);
   });
 });

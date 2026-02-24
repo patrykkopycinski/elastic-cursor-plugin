@@ -25,16 +25,11 @@ config();
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
 import { getDefaultClient } from './auth.js';
 import { checkElasticsearchHealth } from './health.js';
-import type { ToolRegistrationContext } from '@elastic-cursor-plugin/tools-elasticsearch';
-import { registerAll as registerElasticsearchTools } from '@elastic-cursor-plugin/tools-elasticsearch';
-import { registerAll as registerCloudTools } from '@elastic-cursor-plugin/tools-cloud';
-import { registerAll as registerObservabilityTools } from '@elastic-cursor-plugin/tools-observability';
-import { registerAll as registerSecurityTools } from '@elastic-cursor-plugin/tools-security';
-import { registerAll as registerSearchAppsTools } from '@elastic-cursor-plugin/tools-search-apps';
-import { registerAll as registerAgentBuilderTools } from '@elastic-cursor-plugin/tools-agent-builder';
-import { registerAll as registerKibanaTools } from '@elastic-cursor-plugin/tools-kibana';
+import { registerAll as registerGatewayTools } from '@elastic-cursor-plugin/tools-gateway';
+import { registerAll as registerSmartTools } from '@elastic-cursor-plugin/tools-smart';
 import { registerAll as registerWorkflowTools } from '@elastic-cursor-plugin/tools-workflows';
 import { registerDocsResources } from '@elastic-cursor-plugin/docs-provider';
 
@@ -45,6 +40,10 @@ async function main() {
   const client = getDefaultClient();
   const health = await checkElasticsearchHealth(client);
 
+  const hasEs = health.ok && client != null;
+  const hasKibana = !!process.env.KIBANA_URL;
+  const hasCloud = !!process.env.ELASTIC_CLOUD_API_KEY;
+
   const server = new McpServer(
     {
       name: SERVER_NAME,
@@ -52,32 +51,40 @@ async function main() {
     },
     {
       capabilities: {
-        tools: {},
+        tools: { listChanged: true },
         resources: { listChanged: true },
       },
       instructions: `Elastic Developer Experience Tools — first-class UX: one config, Cloud or on-prem, fast time-to-first-value
 
 Connect to Elasticsearch and use Elastic Cloud, Observability, and Security tooling.
 
-**First-time setup:** If the user wants to set up Elastic from zero, ask once: "Do you prefer Cloud (managed, no servers) or on-prem (Docker)?" Then call get_deployment_guide with preference "cloud" or "on_prem". For Cloud, use create_cloud_project and get_connection_config so they can paste credentials and run a search in under 2 minutes. For on-prem, point them to examples/on-prem-docker (docker compose up -d) then get_connection_config with http://localhost:9200.
+**First-time setup:** If the user wants to set up Elastic from zero, ask once: "Do you prefer Cloud (managed, no servers) or on-prem (Docker)?" Then call get_deployment_guide with preference "cloud" or "on_prem". For Cloud, use cloud_api and get_connection_config so they can paste credentials and run a search in under 2 minutes. For on-prem, point them to examples/on-prem-docker (docker compose up -d) then get_connection_config with http://localhost:9200.
 
 Configuration: ES_URL + ES_API_KEY (or ES_USERNAME/ES_PASSWORD), or ES_CLOUD_ID + ES_API_KEY.
 Startup health: ${health.ok ? `Connected (${health.clusterName ?? 'cluster'} ${health.version ?? ''})` : health.message}
 
-Use the available tools to manage indices, run searches, ESQL, ingest pipelines, inference endpoints, and more. Return copy-paste-ready snippets (connection config, code) when possible.
+**API Gateway Tools:** Use elasticsearch_api, kibana_api, and cloud_api for direct REST API access. Read the API reference resources (elastic://docs/api/elasticsearch, elastic://docs/api/kibana, elastic://docs/api/cloud) for endpoint documentation before making calls. Use esql_query for ES|QL queries with tabular output.
 
-**O11Y Workflows:** Use discover_o11y_data to auto-detect APM services, metrics, and logs. Use get_data_summary for a rich summary with dashboard and SLO recommendations. Use list_workflows and run_workflow for multi-step O11Y configuration flows. Use create_slo/list_slos/get_slo/update_slo/delete_slo for SLO management.`,
+**Smart Workflow Tools:** Use discover_o11y_data to auto-detect APM services, metrics, and logs. Use get_data_summary for a rich summary with dashboard and SLO recommendations. Use list_workflows and run_workflow for multi-step O11Y configuration flows.
+
+Return copy-paste-ready snippets (connection config, code) when possible.`,
     }
   );
 
-  registerElasticsearchTools(server as unknown as ToolRegistrationContext, client);
-  registerCloudTools(server as unknown as import('@elastic-cursor-plugin/tools-cloud').ToolRegistrationContext);
-  registerObservabilityTools(server as unknown as import('@elastic-cursor-plugin/tools-observability').ToolRegistrationContext);
-  registerSecurityTools(server as unknown as import('@elastic-cursor-plugin/tools-security').ToolRegistrationContext);
-  registerSearchAppsTools(server as unknown as import('@elastic-cursor-plugin/tools-search-apps').ToolRegistrationContext);
-  registerAgentBuilderTools(server as unknown as import('@elastic-cursor-plugin/tools-agent-builder').ToolRegistrationContext);
-  registerKibanaTools(server as unknown as import('@elastic-cursor-plugin/tools-kibana').ToolRegistrationContext);
+  registerGatewayTools(server as unknown as ToolRegistrationContext, {
+    esClient: hasEs ? client : null,
+    hasKibana,
+    hasCloud,
+  });
+
+  registerSmartTools(server as unknown as ToolRegistrationContext, {
+    hasEs,
+    hasKibana,
+    hasCloud,
+  });
+
   registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext);
+
   registerDocsResources(server as unknown as import('@elastic-cursor-plugin/docs-provider').ServerLike);
 
   server.registerTool(

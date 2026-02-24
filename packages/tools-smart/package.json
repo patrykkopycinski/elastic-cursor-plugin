@@ -1,8 +1,8 @@
 {
-  "name": "@elastic-cursor-plugin/tools-workflows",
+  "name": "@elastic-cursor-plugin/tools-smart",
   "version": "0.1.0",
   "license": "Elastic-2.0 OR AGPL-3.0-only OR SSPL-1.0",
-  "description": "O11Y workflow engine — orchestrates MCP tools into repeatable configuration sequences",
+  "description": "Smart workflow MCP tools with domain logic for Observability, Security, Search, and Cloud",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,8 +13,7 @@
   },
   "dependencies": {
     "@elastic-cursor-plugin/shared-types": "0.1.0",
-    "yaml": "^2.7.0",
-    "ajv": "^8.17.0",
+    "@elastic-cursor-plugin/shared-http": "0.1.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

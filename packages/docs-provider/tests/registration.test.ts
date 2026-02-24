@@ -37,14 +37,17 @@ function createCaptureServer(): ServerLike & {
 }
 
 describe('registerDocsResources', () => {
-  it('registers 3 resources with elastic://docs/ URIs', () => {
+  it('registers 6 resources with elastic://docs/ URIs', () => {
     const server = createCaptureServer();
     registerDocsResources(server);
-    expect(server.resources).toHaveLength(3);
+    expect(server.resources).toHaveLength(6);
     expect(server.resources.map((r) => r.name)).toEqual([
       'docs-api-search',
       'docs-migration-8-9',
       'docs-esql',
+      'docs-api-elasticsearch',
+      'docs-api-kibana',
+      'docs-api-cloud',
     ]);
     expect(server.resources.every((r) => r.uri.startsWith('elastic://docs/'))).toBe(true);
   });
