@@ -67,7 +67,7 @@ describe('MCP server registration', () => {
     expect(server.tools.has('kibana_api')).toBe(true);
     expect(server.tools.has('cloud_api')).toBe(true);
 
-    // Smart tools (13 total)
+    // Smart tools (19 total — 13 original + discover_data + discover_security_data + get_security_summary + get_cluster_context + refresh_cluster_knowledge + clear_cluster_knowledge)
     expect(server.tools.has('discover_o11y_data')).toBe(true);
     expect(server.tools.has('get_data_summary')).toBe(true);
     expect(server.tools.has('create_iot_dashboard')).toBe(true);
@@ -81,14 +81,20 @@ describe('MCP server registration', () => {
     expect(server.tools.has('get_deployment_guide')).toBe(true);
     expect(server.tools.has('get_connection_config')).toBe(true);
     expect(server.tools.has('kibana_info')).toBe(true);
+    expect(server.tools.has('discover_data')).toBe(true);
+    expect(server.tools.has('discover_security_data')).toBe(true);
+    expect(server.tools.has('get_security_summary')).toBe(true);
+    expect(server.tools.has('get_cluster_context')).toBe(true);
+    expect(server.tools.has('refresh_cluster_knowledge')).toBe(true);
+    expect(server.tools.has('clear_cluster_knowledge')).toBe(true);
 
     // Workflow tools (3)
     expect(server.tools.has('list_workflows')).toBe(true);
     expect(server.tools.has('run_workflow')).toBe(true);
     expect(server.tools.has('save_workflow')).toBe(true);
 
-    // 4 gateway + 13 smart + 3 workflow = 20
-    expect(server.tools.size).toBe(20);
+    // 4 gateway + 19 smart + 3 workflow = 26
+    expect(server.tools.size).toBe(26);
   });
 
   it('conditionally registers gateway tools based on options', () => {

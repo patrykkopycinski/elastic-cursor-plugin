@@ -15,7 +15,7 @@
     "elastic-cursor-plugin": "packages/mcp-server/dist/index.js"
   },
   "scripts": {
-    "build": "npm run build -w @elastic-cursor-plugin/shared-types && npm run build -w @elastic-cursor-plugin/shared-http && npm run build -w @elastic-cursor-plugin/tools-gateway && npm run build -w @elastic-cursor-plugin/tools-smart && npm run build -w @elastic-cursor-plugin/tools-workflows && npm run build -w @elastic-cursor-plugin/docs-provider && npm run build -w @elastic-cursor-plugin/mcp-server",
+    "build": "npm run build -w @elastic-cursor-plugin/shared-types && npm run build -w @elastic-cursor-plugin/shared-http && npm run build -w @elastic-cursor-plugin/knowledge-base && npm run build -w @elastic-cursor-plugin/tools-gateway && npm run build -w @elastic-cursor-plugin/tools-smart && npm run build -w @elastic-cursor-plugin/tools-workflows && npm run build -w @elastic-cursor-plugin/docs-provider && npm run build -w @elastic-cursor-plugin/mcp-server",
     "build:server": "npm run build -w packages/mcp-server",
     "dev": "npm run dev -w packages/mcp-server",
     "start": "node packages/mcp-server/dist/index.js",

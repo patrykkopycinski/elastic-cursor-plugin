@@ -8,6 +8,7 @@
  */
 
 import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
+import { registerDiscoverData } from './discover-data.js';
 import { registerDiscoverO11yData } from './discover-o11y-data.js';
 import { registerGetDataSummary } from './get-data-summary.js';
 import { registerCreateIotDashboard } from './create-iot-dashboard.js';
@@ -21,6 +22,11 @@ import { registerGenerateSearchUi } from './generate-search-ui.js';
 import { registerGetDeploymentGuide } from './get-deployment-guide.js';
 import { registerGetConnectionConfig } from './get-connection-config.js';
 import { registerKibanaInfo } from './kibana-info.js';
+import { registerDiscoverSecurityData } from './discover-security-data.js';
+import { registerGetSecuritySummary } from './get-security-summary.js';
+import { registerGetClusterContext } from './get-cluster-context.js';
+import { registerRefreshClusterKnowledge } from './refresh-cluster-knowledge.js';
+import { registerClearClusterKnowledge } from './clear-cluster-knowledge.js';
 
 export type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
 
@@ -31,6 +37,7 @@ export interface SmartToolsOptions {
 }
 
 export function registerAll(server: ToolRegistrationContext, _options: SmartToolsOptions = {}): void {
+  registerDiscoverData(server);
   registerDiscoverO11yData(server);
   registerGetDataSummary(server);
   registerCreateIotDashboard(server);
@@ -44,9 +51,15 @@ export function registerAll(server: ToolRegistrationContext, _options: SmartTool
   registerGetDeploymentGuide(server);
   registerGetConnectionConfig(server);
   registerKibanaInfo(server);
+  registerDiscoverSecurityData(server);
+  registerGetSecuritySummary(server);
+  registerGetClusterContext(server);
+  registerRefreshClusterKnowledge(server);
+  registerClearClusterKnowledge(server);
 }
 
 export {
+  registerDiscoverData,
   registerDiscoverO11yData,
   registerGetDataSummary,
   registerCreateIotDashboard,
@@ -60,4 +73,9 @@ export {
   registerGetDeploymentGuide,
   registerGetConnectionConfig,
   registerKibanaInfo,
+  registerDiscoverSecurityData,
+  registerGetSecuritySummary,
+  registerGetClusterContext,
+  registerRefreshClusterKnowledge,
+  registerClearClusterKnowledge,
 };

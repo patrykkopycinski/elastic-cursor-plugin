@@ -22,10 +22,10 @@ function createCaptureServer(): ToolRegistrationContext & { tools: Map<string, {
 }
 
 describe('tools-smart registerAll', () => {
-  it('registers all 13 smart tools', () => {
+  it('registers all 19 smart tools', () => {
     const server = createCaptureServer();
     registerAll(server);
-    expect(server.tools.size).toBe(13);
+    expect(server.tools.size).toBe(19);
     expect(server.tools.has('discover_o11y_data')).toBe(true);
     expect(server.tools.has('get_data_summary')).toBe(true);
     expect(server.tools.has('setup_apm')).toBe(true);
@@ -34,5 +34,11 @@ describe('tools-smart registerAll', () => {
     expect(server.tools.has('get_deployment_guide')).toBe(true);
     expect(server.tools.has('get_connection_config')).toBe(true);
     expect(server.tools.has('kibana_info')).toBe(true);
+    expect(server.tools.has('discover_data')).toBe(true);
+    expect(server.tools.has('discover_security_data')).toBe(true);
+    expect(server.tools.has('get_security_summary')).toBe(true);
+    expect(server.tools.has('get_cluster_context')).toBe(true);
+    expect(server.tools.has('refresh_cluster_knowledge')).toBe(true);
+    expect(server.tools.has('clear_cluster_knowledge')).toBe(true);
   });
 });

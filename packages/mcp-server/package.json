@@ -19,6 +19,7 @@
     "@elastic/elasticsearch": "^8.0.0",
     "@elastic-cursor-plugin/shared-types": "0.1.0",
     "@elastic-cursor-plugin/shared-http": "0.1.0",
+    "@elastic-cursor-plugin/knowledge-base": "0.1.0",
     "@elastic-cursor-plugin/tools-gateway": "0.1.0",
     "@elastic-cursor-plugin/tools-smart": "0.1.0",
     "@elastic-cursor-plugin/tools-workflows": "0.1.0",

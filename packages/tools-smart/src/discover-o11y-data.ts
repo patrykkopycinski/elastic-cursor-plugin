@@ -10,6 +10,7 @@
 import { z } from 'zod';
 import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
 import { esFetch } from '@elastic-cursor-plugin/shared-http';
+import { writeCategory } from '@elastic-cursor-plugin/knowledge-base';
 import type {
   DiscoveryResult,
   ClusterInfo,
@@ -83,6 +84,12 @@ async function fetchClusterInfo(): Promise<{ ok: true; info: ClusterInfo } | { o
       is_serverless: buildFlavor === 'serverless',
     },
   };
+}
+
+async function getClusterUuid(): Promise<string | null> {
+  const res = await esFetch('/');
+  if (!res.ok) return null;
+  return (res.data as Record<string, unknown>).cluster_uuid as string ?? null;
 }
 
 async function discoverApmServices(
@@ -634,6 +641,13 @@ export function registerDiscoverO11yData(server: ToolRegistrationContext): void 
         iot_profiles: iotProfiles,
         discovery_time_ms: Date.now() - startTime,
       };
+
+      const clusterUuid = await getClusterUuid();
+      if (clusterUuid) {
+        writeCategory(clusterUuid, 'o11y', {
+          services, hosts, containers, log_sources: logSources, iot_profiles: iotProfiles,
+        }).catch(() => {});
+      }
 
       const markdown = formatResultAsMarkdown(result);
 

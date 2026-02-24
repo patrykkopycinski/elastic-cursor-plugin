@@ -26,6 +26,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
+import { cleanupStaleKnowledgeBases } from '@elastic-cursor-plugin/knowledge-base';
 import { getDefaultClient } from './auth.js';
 import { checkElasticsearchHealth } from './health.js';
 import { registerAll as registerGatewayTools } from '@elastic-cursor-plugin/tools-gateway';
@@ -39,6 +40,8 @@ const SERVER_VERSION = '0.1.0';
 async function main() {
   const client = getDefaultClient();
   const health = await checkElasticsearchHealth(client);
+
+  cleanupStaleKnowledgeBases().catch(() => {});
 
   const hasEs = health.ok && client != null;
   const hasKibana = !!process.env.KIBANA_URL;
@@ -65,7 +68,7 @@ Startup health: ${health.ok ? `Connected (${health.clusterName ?? 'cluster'} ${h
 
 **API Gateway Tools:** Use elasticsearch_api, kibana_api, and cloud_api for direct REST API access. Read the API reference resources (elastic://docs/api/elasticsearch, elastic://docs/api/kibana, elastic://docs/api/cloud) for endpoint documentation before making calls. Use esql_query for ES|QL queries with tabular output.
 
-**Smart Workflow Tools:** Use discover_o11y_data to auto-detect APM services, metrics, and logs. Use get_data_summary for a rich summary with dashboard and SLO recommendations. Use list_workflows and run_workflow for multi-step O11Y configuration flows.
+**Smart Workflow Tools:** Use discover_o11y_data to auto-detect APM services, metrics, and logs. Use discover_security_data for security data sources and detection rule coverage. Use get_data_summary for a rich summary with dashboard and SLO recommendations. Use get_cluster_context at the start of a conversation for instant cached cluster awareness. Use list_workflows and run_workflow for multi-step O11Y configuration flows.
 
 Return copy-paste-ready snippets (connection config, code) when possible.`,
     }
