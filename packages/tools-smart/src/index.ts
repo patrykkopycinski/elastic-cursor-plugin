@@ -27,6 +27,7 @@ import { registerGetSecuritySummary } from './get-security-summary.js';
 import { registerGetClusterContext } from './get-cluster-context.js';
 import { registerRefreshClusterKnowledge } from './refresh-cluster-knowledge.js';
 import { registerClearClusterKnowledge } from './clear-cluster-knowledge.js';
+import { registerAllAgentBuilder } from './agent-builder.js';
 
 export type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
 
@@ -56,6 +57,7 @@ export function registerAll(server: ToolRegistrationContext, _options: SmartTool
   registerGetClusterContext(server);
   registerRefreshClusterKnowledge(server);
   registerClearClusterKnowledge(server);
+  registerAllAgentBuilder(server);
 }
 
 export {
@@ -78,4 +80,5 @@ export {
   registerGetClusterContext,
   registerRefreshClusterKnowledge,
   registerClearClusterKnowledge,
+  registerAllAgentBuilder,
 };

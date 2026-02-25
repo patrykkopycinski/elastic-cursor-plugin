@@ -22,10 +22,10 @@ function createCaptureServer(): ToolRegistrationContext & { tools: Map<string, {
 }
 
 describe('tools-smart registerAll', () => {
-  it('registers all 19 smart tools', () => {
+  it('registers all 27 smart tools', () => {
     const server = createCaptureServer();
     registerAll(server);
-    expect(server.tools.size).toBe(19);
+    expect(server.tools.size).toBe(27);
     expect(server.tools.has('discover_o11y_data')).toBe(true);
     expect(server.tools.has('get_data_summary')).toBe(true);
     expect(server.tools.has('setup_apm')).toBe(true);
