@@ -1,0 +1,13 @@
+---
+description: Conventions for @elastic/elasticsearch client usage
+globs: **/*.ts **/*.js **/*.mts **/*.mjs
+---
+
+# Elasticsearch client conventions
+
+- Use the official `@elastic/elasticsearch` JavaScript/TypeScript client. Prefer the current major version (8.x).
+- Create the client with a single node (URL) or `cloud: { id }` for Elastic Cloud. Use `auth: { apiKey }` or `auth: { username, password }`; avoid hardcoding credentials in code.
+- Prefer async/await. Use `client.search()`, `client.index()`, `client.indices.create()`, etc. For bulk operations use `client.bulk()` with the correct operations array shape.
+- For ES|QL use `client.transport.request({ method: 'POST', path: '/_query', body: { query } })`.
+- Handle errors: check response status and catch network errors; surface clear messages to the user.
+- Do not use deprecated APIs (e.g. legacy elasticsearch.js package or deprecated method signatures).

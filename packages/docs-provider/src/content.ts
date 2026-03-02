@@ -458,6 +458,199 @@ Reset the \`elastic\` user password. Returns \`{ "username": "elastic", "passwor
 3. Connect: \`ES_URL=<endpoint>\`, \`ES_API_KEY=<encoded>\`
 `;
 
+export const DOCS_API_SECURITY = `# Elastic Security API Reference
+
+> **Required headers for all Kibana Security API requests:**
+> \`\`\`
+> kbn-xsrf: true
+> x-elastic-internal-origin: kibana
+> Content-Type: application/json
+> \`\`\`
+
+## Detection Rules
+
+### POST /api/detection_engine/rules
+Create a detection rule.
+- \`name\`: Rule name
+- \`description\`: Rule description
+- \`type\`: Rule type (\`query\`, \`eql\`, \`esql\`, \`threshold\`, \`machine_learning\`, \`new_terms\`, \`threat_match\`)
+- \`query\`: Detection query (KQL for query type, EQL syntax for eql type, ES|QL for esql type)
+- \`language\`: Query language (\`kuery\`, \`eql\`, \`esql\`)
+- \`index\`: Array of index patterns to query
+- \`severity\`: \`low\`, \`medium\`, \`high\`, \`critical\`
+- \`risk_score\`: 0–100
+- \`interval\`: Run frequency, e.g. \`"5m"\`
+- \`from\`: Lookback time, e.g. \`"now-6m"\`
+- \`enabled\`: Boolean
+- \`threat\`: MITRE ATT&CK mapping array
+- \`tags\`: Rule tags
+
+### GET /api/detection_engine/rules/_find
+Search detection rules.
+- \`per_page\` / \`page\`: Pagination
+- \`filter\`: KQL filter string
+- \`sort_field\` / \`sort_order\`: Sorting
+
+### GET /api/detection_engine/rules?id=<id>
+Get a single rule by ID.
+
+### PUT /api/detection_engine/rules
+Update a rule (include \`id\` in body).
+
+### DELETE /api/detection_engine/rules?id=<id>
+Delete a rule.
+
+### POST /api/detection_engine/rules/_bulk_action
+Bulk actions on rules.
+- \`action\`: \`enable\`, \`disable\`, \`delete\`, \`duplicate\`, \`export\`
+- \`ids\`: Array of rule IDs
+- \`query\`: KQL filter to select rules
+
+---
+
+## Detection Rule Exceptions
+
+### POST /api/exception_lists
+Create an exception list.
+- \`name\`: List name
+- \`description\`: List description
+- \`type\`: \`detection\` or \`endpoint\`
+- \`namespace_type\`: \`single\` or \`agnostic\`
+
+### POST /api/exception_lists/items
+Add an exception item to a list.
+- \`list_id\`: Exception list ID
+- \`name\`: Exception name
+- \`type\`: \`simple\`
+- \`entries\`: Array of conditions
+  - \`field\`: Field name (e.g. \`process.name\`)
+  - \`operator\`: \`included\` or \`excluded\`
+  - \`type\`: \`match\`, \`match_any\`, \`wildcard\`, \`exists\`, \`nested\`
+  - \`value\`: Match value
+
+### GET /api/exception_lists/items/_find?list_id=<id>
+Find items in an exception list.
+
+### DELETE /api/exception_lists/items?id=<id>
+Delete an exception item.
+
+---
+
+## Alerts (Signals)
+
+### POST /api/detection_engine/signals/status
+Update alert status.
+\`\`\`json
+{
+  "signal_ids": ["alert-id-1", "alert-id-2"],
+  "status": "closed"
+}
+\`\`\`
+Statuses: \`open\`, \`acknowledged\` (in-progress), \`closed\`.
+
+### POST /api/detection_engine/signals/search
+Search alerts using Query DSL.
+\`\`\`json
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "signal.status": "open" } },
+        { "range": { "@timestamp": { "gte": "now-24h" } } }
+      ]
+    }
+  },
+  "size": 20
+}
+\`\`\`
+
+---
+
+## Cases
+
+### POST /api/cases
+Create a case.
+\`\`\`json
+{
+  "title": "Investigation: Suspicious PowerShell",
+  "description": "Detected unusual PowerShell execution on host-01",
+  "severity": "high",
+  "tags": ["incident-type:malware", "mitre:T1059.001"],
+  "connector": { "id": "none", "name": "none", "type": ".none", "fields": null },
+  "settings": { "syncAlerts": true },
+  "owner": "securitySolution"
+}
+\`\`\`
+
+### GET /api/cases/_find
+List cases.
+- \`status\`: \`open\`, \`in-progress\`, \`closed\`
+- \`severity\`: \`low\`, \`medium\`, \`high\`, \`critical\`
+- \`tags\`: Comma-separated tag filter
+- \`sortField\`: \`updated_at\`, \`created_at\`
+- \`sortOrder\`: \`asc\`, \`desc\`
+- \`page\` / \`perPage\`: Pagination
+
+### GET /api/cases/<id>
+Get a specific case with all comments and metadata.
+
+### PATCH /api/cases
+Update cases (batch). Body: \`{ "cases": [{ "id": "...", "version": "...", "status": "closed" }] }\`
+
+### DELETE /api/cases?ids=<id1>&ids=<id2>
+Delete cases by IDs.
+
+### POST /api/cases/<id>/comments
+Add a comment or attach an alert to a case.
+
+**User comment:**
+\`\`\`json
+{
+  "type": "user",
+  "comment": "Investigated process tree — confirmed malicious.",
+  "owner": "securitySolution"
+}
+\`\`\`
+
+**Alert attachment:**
+\`\`\`json
+{
+  "type": "alert",
+  "alertId": "<alert-id>",
+  "index": ".alerts-security.alerts-default",
+  "rule": { "id": "<rule-id>", "name": "Rule Name" },
+  "owner": "securitySolution"
+}
+\`\`\`
+
+---
+
+## Timeline
+
+### POST /api/timeline
+Create or update a timeline.
+- \`timeline\`: Timeline configuration object
+  - \`title\`: Timeline name
+  - \`description\`: Timeline description
+  - \`dataProviders\`: Array of data providers (filters applied to the timeline)
+  - \`kqlQuery\`: KQL filter expression
+  - \`dateRange\`: \`{ "start": "...", "end": "..." }\`
+  - \`sort\`: Sort configuration
+
+### GET /api/timelines
+List all saved timelines.
+- \`page_size\` / \`page_index\`: Pagination
+- \`sort_field\` / \`sort_order\`: Sorting
+- \`status\`: \`active\`, \`draft\`, \`immutable\`
+- \`timeline_type\`: \`default\` or \`template\`
+
+### GET /api/timeline?id=<id>
+Get a specific timeline.
+
+### DELETE /api/timelines
+Delete timelines. Body: \`{ "savedObjectIds": ["id1", "id2"] }\`
+`;
+
 const cache = new Map<string, string>();
 
 export function getCached(uri: string): string | undefined {
@@ -476,5 +669,6 @@ export function getDocByPath(path: string): string | null {
   if (normalized === 'api/elasticsearch') return DOCS_API_ELASTICSEARCH;
   if (normalized === 'api/kibana') return DOCS_API_KIBANA;
   if (normalized === 'api/cloud') return DOCS_API_CLOUD;
+  if (normalized === 'api/security') return DOCS_API_SECURITY;
   return null;
 }

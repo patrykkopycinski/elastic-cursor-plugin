@@ -1,0 +1,39 @@
+---
+description: Investigation workflow patterns for Elastic Security alert triage and threat hunting
+alwaysApply: true
+---
+
+# Security Investigation Patterns
+
+## Alert Triage Workflow
+1. **Assess** — check severity, risk score, and MITRE technique before diving in
+2. **Context** — query related activity on the same host/user within a time window
+3. **Enrich** — check the source IP against threat intelligence, verify the process hash, review the user's baseline
+4. **Decide** — true positive (escalate), benign true positive (exception), false positive (tune rule), or needs more data
+5. **Act** — update alert status, create a case if escalating, or add an exception
+
+## ES|QL Investigation Queries
+- Always scope queries with `@timestamp` ranges to avoid full index scans
+- Use `STATS ... BY` for aggregated views before drilling into raw events
+- Chain `WHERE` clauses to iteratively narrow down; avoid overly complex single queries
+- Use `COUNT_DISTINCT` to identify spread (e.g., how many hosts contacted a suspicious IP)
+- Use `LIMIT` even in aggregations to prevent excessive output
+
+## Case Management
+- Create cases early for true positives — attach alerts immediately while context is fresh
+- Use structured tags: `incident-type:<type>`, `affected-system:<system>`, `mitre:<technique>`
+- Add investigation notes at each step — future analysts need the trail
+- Close cases with a summary: root cause, impact, remediation, lessons learned
+
+## Threat Hunting
+- Start with a hypothesis tied to a specific MITRE technique or known threat actor TTPs
+- Use broad initial queries to establish baselines, then narrow with statistical outliers
+- Hunt on time windows of 7-30 days for behavioral patterns
+- Always validate findings against known-good baselines before escalating
+- Operationalize confirmed findings by converting hunt queries into detection rules
+
+## Common Pitfalls
+- Do NOT query `.alerts-security*` via the ES transport for Kibana-specific alert operations — use the detection engine API
+- Do NOT assume `user.name` is always populated — some data sources only have `user.id` or no user context
+- Do NOT rely solely on `process.name` for process identification — use `process.executable` or `process.hash` for precision
+- Do NOT create overly broad exceptions to silence alert noise — tune the rule query instead

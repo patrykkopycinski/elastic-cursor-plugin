@@ -1,8 +1,35 @@
 {
   "name": "elastic-developer-experience",
-  "version": "0.1.0",
-  "description": "Elasticsearch, Observability, and Security tools, skills, and rules for AI-assisted development",
-  "author": "Elastic",
+  "displayName": "Elastic Developer Experience",
+  "version": "0.2.0",
+  "description": "Elasticsearch, Observability, and Security tools, skills, agents, commands, and rules for AI-assisted development",
+  "author": {
+    "name": "Elastic"
+  },
   "license": "Apache-2.0",
-  "mcp": "mcp.json"
+  "keywords": [
+    "elasticsearch",
+    "elastic",
+    "observability",
+    "security",
+    "siem",
+    "detection-engineering",
+    "apm",
+    "kibana",
+    "mcp",
+    "threat-hunting"
+  ],
+  "category": "developer-tools",
+  "tags": [
+    "search",
+    "observability",
+    "security",
+    "siem",
+    "databases"
+  ],
+  "mcp": "mcp.json",
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "rules": "./rules/",
+  "commands": "./commands/"
 }

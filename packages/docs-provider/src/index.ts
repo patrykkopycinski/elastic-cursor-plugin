@@ -28,6 +28,7 @@ export function registerDocsResources(server: ServerLike): void {
     { name: 'docs-api-elasticsearch', uri: `${DOCS_URI_PREFIX}api/elasticsearch`, title: 'Elasticsearch REST API Reference' },
     { name: 'docs-api-kibana', uri: `${DOCS_URI_PREFIX}api/kibana`, title: 'Kibana REST API Reference' },
     { name: 'docs-api-cloud', uri: `${DOCS_URI_PREFIX}api/cloud`, title: 'Elastic Cloud API Reference' },
+    { name: 'docs-api-security', uri: `${DOCS_URI_PREFIX}api/security`, title: 'Elastic Security API Reference' },
   ];
 
   for (const r of resources) {
@@ -42,7 +43,7 @@ export function registerDocsResources(server: ServerLike): void {
           return { contents: [{ uri: uri.toString(), mimeType: 'text/markdown', text: cached }] };
         }
         const content = getDocByPath(path || 'api/search');
-        const text = content ?? `# Doc not found\nPath: ${path}\n\nAvailable: api/search, api/elasticsearch, api/kibana, api/cloud, migration/8-to-9, esql`;
+        const text = content ?? `# Doc not found\nPath: ${path}\n\nAvailable: api/search, api/elasticsearch, api/kibana, api/cloud, api/security, migration/8-to-9, esql`;
         setCached(uri.toString(), text);
         return { contents: [{ uri: uri.toString(), mimeType: 'text/markdown', text }] };
       }

@@ -1,0 +1,38 @@
+---
+description: Best practices for authoring and maintaining Elastic Security detection rules
+alwaysApply: true
+---
+
+# Detection Engineering Best Practices
+
+## Rule Type Selection
+- **KQL query** — default for simple field-matching detections; fast and readable
+- **EQL** — use for multi-step attack patterns (sequences), process trees, and ordered event correlation; supports `maxspan`, `by`, and `until` clauses
+- **ES|QL** — use for aggregation-based detections (e.g., statistical anomalies, thresholds across groups); supports `STATS`, `EVAL`, `WHERE` pipeline
+- **Threshold** — use for count-based alerting (brute force, spray attacks); simpler than ES|QL for simple counts
+- **ML** — use when baselines are needed (anomalous process, rare domain, unusual login time); requires ML node capacity
+
+## Rule Quality Checklist
+- Every rule MUST have a MITRE ATT&CK tactic and technique mapping
+- Severity must match the actual impact: `critical` = confirmed destructive, `high` = strong signal, `medium` = needs context, `low` = informational
+- Risk score should correlate with severity: critical 75-100, high 50-74, medium 25-49, low 1-24
+- Set `from: now-6m` for 5-minute interval rules (1 minute overlap prevents gaps)
+- Use specific index patterns (e.g., `logs-endpoint.events.process-*`) not broad wildcards when possible
+
+## Query Writing
+- Prefer ECS field names (`process.name`, `event.action`, `source.ip`) for portability across data sources
+- In EQL sequences, always include a `maxspan` to bound correlation windows
+- In KQL, use `AND`/`OR` explicitly — implicit AND can be confusing
+- For threshold rules, pick group-by fields that produce actionable groupings (e.g., `source.ip` + `user.name`, not just `host.name`)
+- Test queries against production data volume to estimate alert rate before enabling
+
+## Exception Management
+- Create exceptions for known-good patterns, not to suppress symptoms of a noisy rule — fix the query instead
+- Scope exceptions to the specific rule unless the pattern is universally benign
+- Add a comment to every exception explaining why it was created and who approved it
+- Review exceptions quarterly; remove any that no longer apply
+
+## MITRE ATT&CK Alignment
+- Map rules to the most specific technique (sub-technique when available), not just the tactic
+- Multiple tactics per rule are valid when the behavior spans phases (e.g., Execution + Defense Evasion)
+- Use the MITRE ATT&CK coverage view in Kibana Security → Rules → Coverage to identify gaps

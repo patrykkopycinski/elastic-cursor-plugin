@@ -28,6 +28,9 @@ import { registerGetClusterContext } from './get-cluster-context.js';
 import { registerRefreshClusterKnowledge } from './refresh-cluster-knowledge.js';
 import { registerClearClusterKnowledge } from './clear-cluster-knowledge.js';
 import { registerAllAgentBuilder } from './agent-builder.js';
+import { registerManageDetectionRules } from './manage-detection-rules.js';
+import { registerTriageAlerts } from './triage-alerts.js';
+import { registerManageCases } from './manage-cases.js';
 
 export type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
 
@@ -58,6 +61,9 @@ export function registerAll(server: ToolRegistrationContext, _options: SmartTool
   registerRefreshClusterKnowledge(server);
   registerClearClusterKnowledge(server);
   registerAllAgentBuilder(server);
+  registerManageDetectionRules(server);
+  registerTriageAlerts(server);
+  registerManageCases(server);
 }
 
 export {
@@ -81,4 +87,7 @@ export {
   registerRefreshClusterKnowledge,
   registerClearClusterKnowledge,
   registerAllAgentBuilder,
+  registerManageDetectionRules,
+  registerTriageAlerts,
+  registerManageCases,
 };
