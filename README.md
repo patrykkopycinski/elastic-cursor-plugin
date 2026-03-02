@@ -34,7 +34,7 @@ From repo: run `npm install && npm run build` in the plugin directory first. Ful
 
 ### Local plugin install (symlink)
 
-To make the full plugin available in Cursor (skills, rules, agents, commands — not just MCP tools), symlink the repo into the local plugins directory:
+To make skills, rules, agents, and commands available in Cursor (not just MCP tools), symlink each component directory individually into your workspace `.cursor/` directory:
 
 ```bash
 # Clone and build
@@ -42,16 +42,38 @@ git clone https://github.com/patrykkopycinski/elastic-cursor-plugin.git
 cd elastic-cursor-plugin
 npm install && npm run build
 
-# Symlink into Cursor's local plugins directory
-ln -s "$(pwd)" ~/.cursor/plugins/local/elastic-developer-experience
+# Set the plugin path
+PLUGIN_DIR="$(pwd)"
+
+# Symlink each component into your project's .cursor/ directory
+# (run from your target project root)
+ln -s "$PLUGIN_DIR/skills" .cursor/skills
+ln -s "$PLUGIN_DIR/rules" .cursor/rules
+ln -s "$PLUGIN_DIR/agents" .cursor/agents
+ln -s "$PLUGIN_DIR/commands" .cursor/commands
 ```
 
-Restart Cursor. The plugin is now active — all skills, rules, agents, and commands are discoverable alongside the MCP tools.
-
-To uninstall, remove the symlink:
+Or symlink into your global Cursor config to make them available across all projects:
 
 ```bash
-rm ~/.cursor/plugins/local/elastic-developer-experience
+PLUGIN_DIR="/path/to/elastic-cursor-plugin"
+
+ln -s "$PLUGIN_DIR/skills" ~/.cursor/skills-elastic
+ln -s "$PLUGIN_DIR/rules" ~/.cursor/rules-elastic
+ln -s "$PLUGIN_DIR/agents" ~/.cursor/agents-elastic
+ln -s "$PLUGIN_DIR/commands" ~/.cursor/commands-elastic
+```
+
+Restart Cursor after symlinking. The MCP server is configured separately (see Quick start above).
+
+To uninstall, remove the symlinks:
+
+```bash
+# Per-project
+rm .cursor/skills .cursor/rules .cursor/agents .cursor/commands
+
+# Or global
+rm ~/.cursor/skills-elastic ~/.cursor/rules-elastic ~/.cursor/agents-elastic ~/.cursor/commands-elastic
 ```
 
 ---
