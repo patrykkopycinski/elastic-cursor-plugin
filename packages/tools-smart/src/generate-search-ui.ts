@@ -17,7 +17,7 @@ export function registerGenerateSearchUi(server: ToolRegistrationContext): void 
       title: 'Generate Search UI',
       description: 'Generate React Search UI component code for Elasticsearch App Search or programmatic search.',
       inputSchema: z.object({
-        framework: z.enum(['react', 'vue']).optional().default('react'),
+        framework: z.enum(['react', 'vue']).optional().default('react').describe('Frontend framework to generate search UI code for'),
         search_endpoint: z.string().optional().describe('Search API endpoint or index'),
       }),
     },

@@ -20,7 +20,7 @@ export function registerSetupLogShipping(server: ToolRegistrationContext): void 
       inputSchema: z.object({
         log_path: z.string().describe('Path to log files (e.g. /var/log/app/*.log)'),
         index_name: z.string().optional().describe('Target index name (default logs-app)'),
-        type: z.enum(['filebeat', 'elastic_agent']).optional().default('filebeat'),
+        type: z.enum(['filebeat', 'elastic_agent']).optional().default('filebeat').describe('Log shipper type to generate configuration for (filebeat or elastic_agent)'),
       }),
     },
     async (args) => {
