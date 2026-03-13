@@ -119,7 +119,7 @@ async function listAlerts(input: Extract<Input, { operation: 'list' }>): Promise
 }
 
 async function getAlert(alertId: string): Promise<string> {
-  const res = await esFetch(`/${ALERTS_INDEX}/_doc/${alertId}?ignore_unavailable=true`);
+  const res = await esFetch(`/${ALERTS_INDEX}/_doc/${alertId}`);
   if (!res.ok) return `Failed to retrieve alert ${alertId}: ${res.error ?? 'not found'}`;
 
   const doc = res.data as { _id: string; _source: Record<string, unknown> };
