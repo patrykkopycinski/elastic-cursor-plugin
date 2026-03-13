@@ -23,7 +23,6 @@
     "@elastic-cursor-plugin/tools-gateway": "0.1.0",
     "@elastic-cursor-plugin/tools-smart": "0.1.0",
     "@elastic-cursor-plugin/tools-workflows": "0.1.0",
-    "@elastic-cursor-plugin/docs-provider": "0.1.0",
     "@modelcontextprotocol/sdk": "^1.25.0",
     "dotenv": "^16.4.0",
     "zod": "^3.24.0"

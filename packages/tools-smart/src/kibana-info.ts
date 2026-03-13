@@ -15,35 +15,47 @@ export function registerKibanaInfo(server: ToolRegistrationContext): void {
   server.registerTool(
     'kibana_info',
     {
-      title: 'Kibana: Info and quick links',
+      title: 'Kibana: Quick links for your instance',
       description:
-        'Return Kibana URL and quick reference for main apps (Discover, Dashboard, Dev Tools, Fleet, APM, Security, Maps, Canvas).',
+        'Return the configured Kibana URL with direct links to main apps (Discover, Dashboard, Dev Tools, Fleet, APM, Security, Maps, Canvas).',
       inputSchema: z.object({}),
     },
     async () => {
       const base = getKibanaUrl();
-      const url = base ? base.replace(/\/$/, '') : 'https://your-kibana.example.com';
-      const text = [
-        'Kibana quick reference',
-        base ? `Base URL: ${url}` : 'Set KIBANA_URL to see your base URL here.',
+      const url = base ? base.replace(/\/$/, '') : null;
+
+      if (!url) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Kibana URL not configured. Set KIBANA_URL to get direct links to your Kibana apps.',
+            },
+          ],
+        };
+      }
+
+      const apps = [
+        ['Discover', '/app/discover'],
+        ['Dashboard', '/app/dashboards'],
+        ['Dev Tools (Console)', '/app/dev_tools#/console'],
+        ['Stack Management', '/app/management'],
+        ['Fleet', '/app/fleet'],
+        ['APM', '/app/apm'],
+        ['Logs', '/app/logs'],
+        ['Metrics', '/app/metrics'],
+        ['Security', '/app/security'],
+        ['Maps', '/app/maps'],
+        ['Canvas', '/app/canvas'],
+      ];
+
+      const lines = [
+        `Kibana: ${url}`,
         '',
-        'Main apps (append to base URL):',
-        '- Discover: /app/discover',
-        '- Dashboard: /app/dashboards',
-        '- Dev Tools (Console): /app/dev_tools#/console',
-        '- Stack Management: /app/management',
-        '- Fleet: /app/fleet',
-        '- APM: /app/apm',
-        '- Logs: /app/logs',
-        '- Metrics: /app/metrics',
-        '- Security: /app/security',
-        '- Maps: /app/maps',
-        '- Canvas: /app/canvas',
-        '- Lens: Create from Dashboard or Discover → Visualize.',
-        '',
-        'Use kibana_list_data_views and kibana_list_dashboards when KIBANA_URL and auth are set.',
-      ].join('\n');
-      return { content: [{ type: 'text', text }] };
+        ...apps.map(([name, path]) => `- ${name}: ${url}${path}`),
+      ];
+
+      return { content: [{ type: 'text', text: lines.join('\n') }] };
     }
   );
 }

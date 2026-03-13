@@ -4,6 +4,9 @@
       "command": "node",
       "args": ["packages/mcp-server/dist/index.js"],
       "env": {}
+    },
+    "elastic-docs": {
+      "url": "https://www.elastic.co/docs/_mcp/"
     }
   }
 }

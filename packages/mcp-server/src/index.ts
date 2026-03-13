@@ -22,6 +22,10 @@
 import { config } from 'dotenv';
 config();
 
+if (process.env.ES_SSL_SKIP_VERIFY === 'true') {
+  console.warn('[elastic-cursor-plugin] WARNING: TLS certificate verification is disabled (ES_SSL_SKIP_VERIFY=true). This is insecure for production use.');
+}
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -32,8 +36,6 @@ import { checkElasticsearchHealth } from './health.js';
 import { registerAll as registerGatewayTools } from '@elastic-cursor-plugin/tools-gateway';
 import { registerAll as registerSmartTools } from '@elastic-cursor-plugin/tools-smart';
 import { registerAll as registerWorkflowTools } from '@elastic-cursor-plugin/tools-workflows';
-import { registerDocsResources } from '@elastic-cursor-plugin/docs-provider';
-
 const SERVER_NAME = 'elastic-developer-experience';
 const SERVER_VERSION = '0.1.0';
 
@@ -55,7 +57,6 @@ async function main() {
     {
       capabilities: {
         tools: { listChanged: true },
-        resources: { listChanged: true },
       },
       instructions: `Elastic Developer Experience Tools — first-class UX: one config, Cloud or on-prem, fast time-to-first-value
 
@@ -66,7 +67,7 @@ Connect to Elasticsearch and use Elastic Cloud, Observability, and Security tool
 Configuration: ES_URL + ES_API_KEY (or ES_USERNAME/ES_PASSWORD), or ES_CLOUD_ID + ES_API_KEY.
 Startup health: ${health.ok ? `Connected (${health.clusterName ?? 'cluster'} ${health.version ?? ''})` : health.message}
 
-**API Gateway Tools:** Use elasticsearch_api, kibana_api, and cloud_api for direct REST API access. Read the API reference resources (elastic://docs/api/elasticsearch, elastic://docs/api/kibana, elastic://docs/api/cloud) for endpoint documentation before making calls. Use esql_query for ES|QL queries with tabular output.
+**API Gateway Tools:** Use elasticsearch_api, kibana_api, and cloud_api for direct REST API access. Use esql_query for ES|QL queries with tabular output. For API reference documentation, use the elastic-docs MCP server tools (search_docs, get_document_by_url).
 
 **Smart Workflow Tools:** Use discover_o11y_data to auto-detect APM services, metrics, and logs. Use discover_security_data for security data sources and detection rule coverage. Use get_data_summary for a rich summary with dashboard and SLO recommendations. Use get_cluster_context at the start of a conversation for instant cached cluster awareness. Use list_workflows and run_workflow for multi-step O11Y configuration flows.
 
@@ -87,8 +88,6 @@ Return copy-paste-ready snippets (connection config, code) when possible.`,
   });
 
   registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext);
-
-  registerDocsResources(server as unknown as import('@elastic-cursor-plugin/docs-provider').ServerLike);
 
   server.registerTool(
     'deploy_telemetry_dashboard',

@@ -15,17 +15,14 @@ import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-type
 import { registerAll as registerGatewayTools } from '@elastic-cursor-plugin/tools-gateway';
 import { registerAll as registerSmartTools } from '@elastic-cursor-plugin/tools-smart';
 import { registerAll as registerWorkflowTools } from '@elastic-cursor-plugin/tools-workflows';
-import { registerDocsResources } from '@elastic-cursor-plugin/docs-provider';
 import type { Client } from '@elastic/elasticsearch';
 
 function createCaptureServer(): ToolRegistrationContext & {
   tools: Map<string, { name: string }>;
-  registerResource: () => void;
 } {
   const tools = new Map<string, { name: string }>();
   return {
     tools,
-    registerResource: () => { },
     registerTool(name: string) {
       tools.set(name, { name });
     },
@@ -45,7 +42,6 @@ describe('MCP server registration', () => {
       });
       registerSmartTools(server as unknown as ToolRegistrationContext);
       registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext);
-      registerDocsResources(server as unknown as import('@elastic-cursor-plugin/docs-provider').ServerLike);
     }).not.toThrow();
   });
 
@@ -67,7 +63,7 @@ describe('MCP server registration', () => {
     expect(server.tools.has('kibana_api')).toBe(true);
     expect(server.tools.has('cloud_api')).toBe(true);
 
-    // Smart tools (19 total — 13 original + discover_data + discover_security_data + get_security_summary + get_cluster_context + refresh_cluster_knowledge + clear_cluster_knowledge)
+    // Smart tools (29 total)
     expect(server.tools.has('discover_o11y_data')).toBe(true);
     expect(server.tools.has('get_data_summary')).toBe(true);
     expect(server.tools.has('create_iot_dashboard')).toBe(true);
@@ -75,7 +71,6 @@ describe('MCP server registration', () => {
     expect(server.tools.has('setup_log_shipping')).toBe(true);
     expect(server.tools.has('create_alert_rule')).toBe(true);
     expect(server.tools.has('create_dashboard')).toBe(true);
-    expect(server.tools.has('observability_info')).toBe(true);
     expect(server.tools.has('siem_quickstart')).toBe(true);
     expect(server.tools.has('generate_search_ui')).toBe(true);
     expect(server.tools.has('get_deployment_guide')).toBe(true);
@@ -93,8 +88,8 @@ describe('MCP server registration', () => {
     expect(server.tools.has('run_workflow')).toBe(true);
     expect(server.tools.has('save_workflow')).toBe(true);
 
-    // 4 gateway + 19 smart + 3 workflow = 26
-    expect(server.tools.size).toBe(26);
+    // 4 gateway + 29 smart + 3 workflow = 36
+    expect(server.tools.size).toBe(36);
   });
 
   it('conditionally registers gateway tools based on options', () => {

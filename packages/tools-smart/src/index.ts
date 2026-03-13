@@ -16,7 +16,6 @@ import { registerSetupApm } from './setup-apm.js';
 import { registerSetupLogShipping } from './setup-log-shipping.js';
 import { registerCreateAlertRule } from './create-alert-rule.js';
 import { registerCreateDashboard } from './create-dashboard.js';
-import { registerObservabilityInfo } from './observability-info.js';
 import { registerSiemQuickstart } from './siem-quickstart.js';
 import { registerGenerateSearchUi } from './generate-search-ui.js';
 import { registerGetDeploymentGuide } from './get-deployment-guide.js';
@@ -49,7 +48,6 @@ export function registerAll(server: ToolRegistrationContext, _options: SmartTool
   registerSetupLogShipping(server);
   registerCreateAlertRule(server);
   registerCreateDashboard(server);
-  registerObservabilityInfo(server);
   registerSiemQuickstart(server);
   registerGenerateSearchUi(server);
   registerGetDeploymentGuide(server);
@@ -75,7 +73,6 @@ export {
   registerSetupLogShipping,
   registerCreateAlertRule,
   registerCreateDashboard,
-  registerObservabilityInfo,
   registerSiemQuickstart,
   registerGenerateSearchUi,
   registerGetDeploymentGuide,

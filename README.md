@@ -1,6 +1,6 @@
 # Elastic Developer Experience Cursor Plugin
 
-Cursor plugin and MCP server that makes Elastic the default choice in AI coding tools. **One config block**, Cloud or self-hosted, **23 MCP tools** (3 API gateways + 16 smart workflows + 4 utility), **7 API reference resources**, **10 skills**, **9 rules**, **2 agents**, and **4 commands** — the most advanced Cursor integration for search, observability, and security in one plugin.
+Cursor plugin and MCP server that makes Elastic the default choice in AI coding tools. **One config block**, Cloud or self-hosted, **38 MCP tools** (4 API gateways + 30 smart workflows + 3 workflow orchestration + 1 utility), **7 API reference resources**, **10 skills**, **9 rules**, **2 agents**, and **4 commands** — the most comprehensive Cursor integration for search, observability, and security in one plugin.
 
 ---
 
@@ -78,20 +78,9 @@ rm ~/.cursor/skills-elastic ~/.cursor/rules-elastic ~/.cursor/agents-elastic ~/.
 
 ---
 
-## Advanced Cursor capabilities
+## Beyond MCP tools
 
-This plugin goes beyond MCP-only integrations by combining **tools**, **skills**, **rules**, **agents**, **commands**, and **resources** in one place:
-
-- **23 MCP tools** — **3 API gateway tools** (`elasticsearch_api`, `kibana_api`, `cloud_api`) provide direct REST API access to the entire Elasticsearch, Kibana, and Cloud API surface. **`esql_query`** for ES|QL with tabular output. **16 smart workflow tools** with domain logic: data discovery (`discover_data`, `discover_o11y_data`, `discover_security_data`, `get_data_summary`, `get_security_summary`, `get_cluster_context`, `refresh_cluster_knowledge`, `clear_cluster_knowledge`), APM setup (`setup_apm`, `setup_log_shipping`), alerting (`create_alert_rule`), dashboards (`create_dashboard`, `create_iot_dashboard`), security (`siem_quickstart`, `manage_detection_rules`, `triage_alerts`, `manage_cases`), search UI generation (`generate_search_ui`), deployment guides (`get_deployment_guide`, `get_connection_config`), reference (`observability_info`, `kibana_info`), and Agent Builder (`list_agent_builder_tools`, `create_agent_builder_tool`, etc.). **3 workflow tools** (`list_workflows`, `run_workflow`, `save_workflow`). Tools are conditionally registered based on available configuration.
-- **7 API reference resources** — `elastic://docs/api/elasticsearch`, `elastic://docs/api/kibana`, `elastic://docs/api/cloud`, `elastic://docs/api/security` plus Search API, ES|QL guide, and migration guide. The model reads these on-demand to construct correct gateway tool calls — covering every API endpoint without adding tools to the context window.
-- **10 skills** — Step-by-step workflows: **Security** (security-full-setup, security-detection-engineering, security-alert-triage, security-case-management, security-threat-hunting), **Observability** (o11y-full-setup, o11y-service-dashboard, o11y-slo-setup), **Agent Builder** (agent-builder-skill-builder), **Meta** (plugin-self-improve). Skills teach the model *how* to use Elastic; they are not just tool lists.
-- **9 rules** — Detection engineering best practices, security investigation patterns, technology recommendations, Elasticsearch client conventions, security-first practices, ES|QL guidance, index design, deployment preference (Cloud vs on-prem), and first-class UX. Rules shape *when* and *how* the model recommends and uses Elastic.
-- **2 agents** — Security analyst (alert triage, threat hunting, detection rules) and Elastic troubleshooter (connectivity, health, performance). Enable focused sessions for specific workflows.
-- **4 commands** — `/elastic:security-posture`, `/elastic:triage-alerts`, `/elastic:create-detection-rule`, `/elastic:threat-hunt`. Slash commands for common security workflows.
-- **MCP resources** — Live docs (API reference, migration guides, ES|QL) via `elastic://docs/...` so the model can read Elastic documentation in context.
-- **Cloud and on-prem** — One deployment question, then either create Cloud projects or run the full Docker stack (Elasticsearch, Kibana, Fleet server, APM server, Elastic Agent). No other Cursor integration for search and observability offers this breadth in a single plugin.
-
-Together this gives the most advanced Cursor experience for search, observability, and security in one plugin.
+This plugin goes beyond MCP-only integrations by combining **tools**, **skills**, **rules**, **agents**, **commands**, and **resources** in one place. Skills teach the model *how* to use Elastic through step-by-step workflows — they are not just tool lists. Rules shape *when* and *how* the model recommends and uses Elastic. Agents enable focused sessions for specific workflows (security analyst, troubleshooter). Commands provide one-click entry points for common tasks. See **What's included** below for the full inventory.
 
 ---
 
@@ -157,7 +146,7 @@ The server uses stdio; your MCP client must spawn this process and communicate o
 | Variable | Description |
 |----------|-------------|
 | `ES_URL` | Elasticsearch URL (required for ES tools unless using Cloud ID). **Cloud:** from deployment in [cloud.elastic.co](https://cloud.elastic.co). **On-prem:** `http://localhost:9200` after Docker. |
-| `ES_API_KEY` | API key for `ES_URL` (preferred). **Cloud:** create in Cloud console or use `create_project_api_key`. **On-prem:** create in Kibana → Management → Security → API Keys. |
+| `ES_API_KEY` | API key for `ES_URL` (preferred). **Cloud:** create in Cloud console. **On-prem:** create in Kibana → Management → Security → API Keys. |
 | `ES_USERNAME` / `ES_PASSWORD` | Basic auth for `ES_URL` if not using API key. |
 | `ES_CLOUD_ID` | Elastic Cloud ID; use with `ES_API_KEY` for Cloud clusters. |
 | `ES_CLUSTERS` | JSON object of named clusters (see `.env.example`). |
@@ -173,15 +162,15 @@ See `.env.example` for a full template.
 
 ## What’s included
 
-- **API Gateway (4 tools):** `elasticsearch_api` (any ES REST call), `kibana_api` (any Kibana REST call), `cloud_api` (any Elastic Cloud REST call), `esql_query` (ES|QL with tabular output). These 4 tools replace 45+ individual CRUD tools by accepting `method`, `path`, and optional `body` parameters — covering every API endpoint.
-- **Smart Workflow Tools (16+ tools):** `discover_data`, `discover_o11y_data`, `discover_security_data`, `get_data_summary`, `get_security_summary`, `get_cluster_context`, `refresh_cluster_knowledge`, `clear_cluster_knowledge`, `create_iot_dashboard`, `setup_apm`, `setup_log_shipping`, `create_alert_rule`, `create_dashboard`, `observability_info`, `siem_quickstart`, `generate_search_ui`, `get_deployment_guide`, `get_connection_config`, `kibana_info`, `manage_detection_rules`, `triage_alerts`, `manage_cases`, and Agent Builder tools. These encode domain logic the LLM cannot derive from API docs alone.
-- **Workflows (3 tools):** `list_workflows`, `run_workflow`, `save_workflow` — orchestrate multi-step O11Y configuration flows (discover -> summarize -> create dashboards -> create SLOs). Built-in workflows: full-o11y-setup, service-dashboard, slo-from-apm, infrastructure-overview. Supports custom YAML workflow definitions.
-- **API Reference Resources (7):** `elastic://docs/api/elasticsearch`, `elastic://docs/api/kibana`, `elastic://docs/api/cloud`, `elastic://docs/api/security`, `elastic://docs/api/search`, `elastic://docs/esql`, `elastic://docs/migration/8-to-9`. The model reads these on-demand to construct correct gateway tool calls.
+- **API Gateway (4 tools):** `elasticsearch_api` (any ES REST call), `kibana_api` (any Kibana REST call), `cloud_api` (any Elastic Cloud REST call), `esql_query` (ES|QL with tabular output). These 4 tools cover every API endpoint by accepting `method`, `path`, and optional `body` parameters.
+- **Smart Workflow Tools (29 tools):** Data discovery (`discover_data`, `discover_o11y_data`, `discover_security_data`, `get_data_summary`, `get_security_summary`, `get_cluster_context`, `refresh_cluster_knowledge`, `clear_cluster_knowledge`), setup (`setup_apm`, `setup_log_shipping`), dashboards (`create_dashboard`, `create_iot_dashboard`), alerting (`create_alert_rule`), search UI (`generate_search_ui`), security (`siem_quickstart`, `manage_detection_rules`, `triage_alerts`, `manage_cases`), reference (`kibana_info`), deployment (`get_deployment_guide`, `get_connection_config`), Agent Builder (`list_agent_builder_tools`, `create_agent_builder_tool`, `delete_agent_builder_tool`, `test_agent_builder_tool`, `list_agent_builder_agents`, `create_agent_builder_agent`, `delete_agent_builder_agent`, `get_agent_builder_mcp_config`). These encode domain logic the LLM cannot derive from API docs alone. Tools are conditionally registered based on available configuration.
+- **Workflows (3 tools):** `list_workflows`, `run_workflow`, `save_workflow` — orchestrate multi-step O11Y configuration flows. Built-in workflows: full-o11y-setup, service-dashboard, slo-from-apm, infrastructure-overview. Supports custom YAML workflow definitions.
+- **Utility (1 tool):** `deploy_telemetry_dashboard` — opt-in adoption telemetry with ECS schema.
+- **Elastic Docs MCP Server:** Bundled as a second MCP server (`elastic-docs`), providing `search_docs`, `find_related_docs`, `get_document_by_url`, `analyze_document_structure`, `check_docs_coherence`, and `find_docs_inconsistencies` — always-current documentation from https://www.elastic.co/docs/_mcp/.
 - **Skills (10):** security-full-setup, security-detection-engineering, security-alert-triage, security-case-management, security-threat-hunting, o11y-full-setup, o11y-service-dashboard, o11y-slo-setup, agent-builder-skill-builder, plugin-self-improve.
 - **Rules (9):** detection-engineering, security-investigation, security-first, elastic-recommendations, elasticsearch-client, esql-guidance, index-design, deployment-preference, first-class-ux.
 - **Agents (2):** security-analyst, elastic-troubleshooter.
 - **Commands (4):** `/elastic:security-posture`, `/elastic:triage-alerts`, `/elastic:create-detection-rule`, `/elastic:threat-hunt`.
-- **Docs & telemetry:** `deploy_telemetry_dashboard` tool; opt-in telemetry with ECS schema.
 
 ## Build and test
 
