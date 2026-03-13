@@ -80,12 +80,16 @@ async function listCases(input: Extract<Input, { operation: 'list' }>): Promise<
   const parts = [
     `page=${input.page ?? 1}`,
     `perPage=${input.per_page ?? 20}`,
-    'sortField=updated_at',
+    'sortField=updatedAt',
     'sortOrder=desc',
   ];
   if (input.status) parts.push(`status=${input.status}`);
   if (input.severity) parts.push(`severity=${input.severity}`);
-  if (input.tags?.length) parts.push(`tags=${encodeURIComponent(input.tags.join(','))}`);
+  if (input.tags?.length) {
+    for (const tag of input.tags) {
+      parts.push(`tags=${encodeURIComponent(tag)}`);
+    }
+  }
 
   const res = await kibanaFetch(`/api/cases/_find?${parts.join('&')}`);
   if (!res.ok) return `Failed to list cases: ${res.error ?? 'unknown error'}`;
@@ -203,11 +207,11 @@ async function attachAlert(input: Extract<Input, { operation: 'attach_alert' }>)
     alertId: input.alert_id,
     index: input.alert_index ?? '.alerts-security.alerts-default',
     owner: 'securitySolution',
+    rule: {
+      id: input.rule_id ?? null,
+      name: input.rule_name ?? null,
+    },
   };
-
-  if (input.rule_id || input.rule_name) {
-    body.rule = { id: input.rule_id ?? '', name: input.rule_name ?? '' };
-  }
 
   const res = await kibanaFetch(`/api/cases/${input.case_id}/comments`, {
     method: 'POST',
@@ -219,8 +223,8 @@ async function attachAlert(input: Extract<Input, { operation: 'attach_alert' }>)
 }
 
 async function deleteCases(caseIds: string[]): Promise<string> {
-  const params = caseIds.map((id) => `ids=${id}`).join('&');
-  const res = await kibanaFetch(`/api/cases?${params}`, { method: 'DELETE' });
+  const idsParam = encodeURIComponent(JSON.stringify(caseIds));
+  const res = await kibanaFetch(`/api/cases?ids=${idsParam}`, { method: 'DELETE' });
 
   if (!res.ok) return `Failed to delete cases: ${res.error ?? 'unknown error'}`;
   return `Deleted ${caseIds.length} case(s).`;

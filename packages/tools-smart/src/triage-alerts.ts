@@ -23,7 +23,7 @@ const inputSchema = z.discriminatedUnion('operation', [
   z.object({
     operation: z.literal('list'),
     severity: z.enum(['low', 'medium', 'high', 'critical']).optional().describe('Filter by severity'),
-    status: z.enum(['open', 'acknowledged', 'closed']).optional().describe('Filter by status (default open)'),
+    status: z.enum(['open', 'acknowledged', 'in-progress', 'closed']).optional().describe('Filter by status (default open)'),
     rule_name: z.string().optional().describe('Filter by rule name (partial match)'),
     host_name: z.string().optional().describe('Filter by host name'),
     user_name: z.string().optional().describe('Filter by user name'),
@@ -37,7 +37,8 @@ const inputSchema = z.discriminatedUnion('operation', [
   z.object({
     operation: z.literal('update_status'),
     alert_ids: z.array(z.string()).describe('Alert IDs to update'),
-    status: z.enum(['open', 'acknowledged', 'closed']).describe('New status'),
+    status: z.enum(['open', 'acknowledged', 'in-progress', 'closed']).describe('New status'),
+    reason: z.enum(['false_positive', 'duplicate', 'true_positive', 'benign_positive', 'automated_closure', 'other']).optional().describe('Close reason (only for closed status)'),
   }),
   z.object({
     operation: z.literal('summary'),
@@ -164,13 +165,18 @@ async function getAlert(alertId: string): Promise<string> {
   return lines.join('\n');
 }
 
-async function updateAlertStatus(alertIds: string[], status: string): Promise<string> {
+async function updateAlertStatus(alertIds: string[], status: string, reason?: string): Promise<string> {
+  const body: Record<string, unknown> = {
+    signal_ids: alertIds,
+    status,
+  };
+  if (reason && status === 'closed') {
+    body.reason = reason;
+  }
+
   const res = await kibanaFetch('/api/detection_engine/signals/status', {
     method: 'POST',
-    body: {
-      signal_ids: alertIds,
-      status,
-    },
+    body,
   });
 
   if (!res.ok) return `Failed to update alert status: ${res.error ?? 'unknown error'}`;
@@ -266,7 +272,7 @@ export function registerTriageAlerts(server: ToolRegistrationContext): void {
         case 'get':
           return textResponse(await getAlert(input.alert_id));
         case 'update_status':
-          return textResponse(await updateAlertStatus(input.alert_ids, input.status));
+          return textResponse(await updateAlertStatus(input.alert_ids, input.status, input.reason));
         case 'summary':
           return textResponse(await alertSummary(input.time_range ?? 'now-24h'));
         default:

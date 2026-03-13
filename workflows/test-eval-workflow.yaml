@@ -1,0 +1,9 @@
+name: test-eval-workflow
+description: Test workflow for eval
+steps:
+  - id: health_check
+    name: Check cluster health
+    tool: elasticsearch_api
+    parameters:
+      method: GET
+      path: /_cluster/health

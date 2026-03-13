@@ -42,7 +42,7 @@ const inputSchema = z.discriminatedUnion('operation', [
     operation: z.literal('create'),
     name: z.string().describe('Rule name'),
     description: z.string().describe('Rule description'),
-    type: z.enum(['query', 'eql', 'esql', 'threshold', 'machine_learning']).describe('Rule type'),
+    type: z.enum(['query', 'eql', 'esql', 'threshold', 'machine_learning', 'new_terms', 'threat_match', 'saved_query']).describe('Rule type'),
     query: z.string().optional().describe('Detection query (KQL, EQL, or ES|QL depending on type)'),
     index: z.array(z.string()).optional().describe('Index patterns to query'),
     severity: z.enum(['low', 'medium', 'high', 'critical']).describe('Alert severity'),
@@ -50,16 +50,31 @@ const inputSchema = z.discriminatedUnion('operation', [
     interval: z.string().optional().describe('Run frequency (default "5m")'),
     enabled: z.boolean().optional().describe('Enable immediately (default true)'),
     tags: z.array(z.string()).optional().describe('Rule tags'),
-    threat: z.array(z.object({
-      tactic_id: z.string().describe('MITRE tactic ID (e.g. TA0001)'),
-      tactic_name: z.string().describe('MITRE tactic name'),
-      technique_id: z.string().optional().describe('MITRE technique ID (e.g. T1059)'),
-      technique_name: z.string().optional().describe('MITRE technique name'),
-    })).optional().describe('MITRE ATT&CK mappings'),
+    language: z.enum(['kuery', 'lucene', 'eql', 'esql']).optional().describe('Query language (default depends on type: kuery for query, eql for eql, esql for esql)'),
+    machine_learning_job_id: z.union([z.string(), z.array(z.string())]).optional().describe('ML job ID(s) — required for machine_learning type'),
+    anomaly_threshold: z.number().min(0).max(100).optional().describe('Anomaly score threshold (0-100) — required for machine_learning type'),
+    new_terms_fields: z.array(z.string()).optional().describe('Fields to check for new terms — required for new_terms type'),
+    history_window_start: z.string().optional().describe('History window start (e.g. "now-7d") — required for new_terms type'),
+    threat_query: z.string().optional().describe('Threat indicator query — required for threat_match type'),
+    threat_index: z.array(z.string()).optional().describe('Threat indicator index patterns — required for threat_match type'),
+    threat_mapping: z.array(z.object({
+      entries: z.array(z.object({
+        field: z.string(),
+        type: z.literal('mapping'),
+        value: z.string(),
+      })),
+    })).optional().describe('Threat mapping entries — required for threat_match type'),
+    saved_id: z.string().optional().describe('Saved query ID — required for saved_query type'),
     threshold: z.object({
       field: z.array(z.string()),
       value: z.number(),
     }).optional().describe('Threshold configuration (required for threshold type)'),
+    threat: z.array(z.object({
+      tactic_id: z.string().describe('MITRE tactic ID (e.g. TA0001)'),
+      tactic_name: z.string().describe('MITRE tactic name'),
+      technique_id: z.string().optional().describe('MITRE technique ID'),
+      technique_name: z.string().optional().describe('MITRE technique name'),
+    })).optional().describe('MITRE ATT&CK mappings'),
   }),
   z.object({
     operation: z.literal('enable'),
@@ -91,7 +106,15 @@ async function listRules(input: Extract<Input, { operation: 'list' }>): Promise<
     'sort_field=name',
     'sort_order=asc',
   ];
-  if (input.filter) parts.push(`filter=${encodeURIComponent(input.filter)}`);
+
+  const filterParts: string[] = [];
+  if (input.filter) filterParts.push(input.filter);
+  if (input.severity) filterParts.push(`alert.attributes.params.severity:${input.severity}`);
+  if (input.enabled !== undefined) filterParts.push(`alert.attributes.enabled:${input.enabled}`);
+
+  if (filterParts.length > 0) {
+    parts.push(`filter=${encodeURIComponent(filterParts.join(' AND '))}`);
+  }
 
   const res = await kibanaFetch(`/api/detection_engine/rules/_find?${parts.join('&')}`);
   if (!res.ok) return `Failed to list rules: ${res.error ?? 'unknown error'}`;
@@ -102,16 +125,12 @@ async function listRules(input: Extract<Input, { operation: 'list' }>): Promise<
 
   if (rules.length === 0) return 'No detection rules found matching the criteria.';
 
-  let filtered = rules;
-  if (input.severity) filtered = filtered.filter((r) => r.severity === input.severity);
-  if (input.enabled !== undefined) filtered = filtered.filter((r) => r.enabled === input.enabled);
-
   const lines = [
-    `# Detection Rules (${total} total, showing ${filtered.length})`,
+    `# Detection Rules (${total} total, showing ${rules.length})`,
     '',
   ];
 
-  for (const rule of filtered) {
+  for (const rule of rules) {
     const status = rule.enabled ? 'enabled' : 'disabled';
     const mitre = rule.threat
       ?.map((t) => t.tactic?.name)
@@ -140,10 +159,26 @@ async function createRule(input: Extract<Input, { operation: 'create' }>): Promi
 
   if (input.query) body.query = input.query;
   if (input.index) body.index = input.index;
-  if (input.type === 'query') body.language = 'kuery';
-  if (input.type === 'eql') body.language = 'eql';
-  if (input.type === 'esql') body.language = 'esql';
+
+  if (input.language) {
+    body.language = input.language;
+  } else if (input.type === 'query') {
+    body.language = 'kuery';
+  } else if (input.type === 'eql') {
+    body.language = 'eql';
+  } else if (input.type === 'esql') {
+    body.language = 'esql';
+  }
+
   if (input.threshold) body.threshold = input.threshold;
+  if (input.machine_learning_job_id) body.machine_learning_job_id = input.machine_learning_job_id;
+  if (input.anomaly_threshold !== undefined) body.anomaly_threshold = input.anomaly_threshold;
+  if (input.new_terms_fields) body.new_terms_fields = input.new_terms_fields;
+  if (input.history_window_start) body.history_window_start = input.history_window_start;
+  if (input.threat_query) body.threat_query = input.threat_query;
+  if (input.threat_index) body.threat_index = input.threat_index;
+  if (input.threat_mapping) body.threat_mapping = input.threat_mapping;
+  if (input.saved_id) body.saved_id = input.saved_id;
 
   if (input.threat) {
     body.threat = input.threat.map((t) => ({
