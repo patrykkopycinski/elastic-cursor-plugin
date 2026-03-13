@@ -59,7 +59,9 @@ export async function cleanupStaleKnowledgeBases(): Promise<string[]> {
       try {
         await rm(dirPath, { recursive: true, force: true });
         removed.push(entry);
-      } catch { /* ignore */ }
+      } catch (err) {
+        console.warn(`[knowledge-base] Failed to remove orphaned directory ${entry}: ${err instanceof Error ? err.message : String(err)}`);
+      }
       continue;
     }
 
@@ -70,7 +72,9 @@ export async function cleanupStaleKnowledgeBases(): Promise<string[]> {
       try {
         await rm(dirPath, { recursive: true, force: true });
         removed.push(entry);
-      } catch { /* ignore removal failure */ }
+      } catch (err) {
+        console.warn(`[knowledge-base] Failed to remove stale directory ${entry}: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
   }
 

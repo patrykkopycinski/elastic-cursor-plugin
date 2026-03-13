@@ -11,6 +11,7 @@ import { z } from 'zod';
 import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
 import { textResponse, errorResponse } from '@elastic-cursor-plugin/shared-types';
 import { esFetch } from '@elastic-cursor-plugin/shared-http';
+import { writeCategory } from '@elastic-cursor-plugin/knowledge-base';
 import type {
   ClusterProfile,
   GenericClusterInfo,
@@ -473,6 +474,37 @@ export function registerDiscoverData(server: ToolRegistrationContext): void {
         lifecycle_policies: lifecyclePolicies,
         discovery_time_ms: Date.now() - startTime,
       };
+
+      const clusterUuid = clusterResult.info.uuid;
+      if (clusterUuid && clusterUuid !== 'unknown') {
+        const kbIndices = indices.map((i) => ({
+          name: i.name,
+          doc_count: i.doc_count,
+          type: i.type,
+          is_data_stream: i.is_data_stream,
+        }));
+        const kbDataStreams = indices
+          .filter((i) => i.is_data_stream)
+          .map((i) => ({ name: i.name, doc_count: i.doc_count, type: i.type }));
+        const kbTemplates = templates.map((t) => ({
+          name: t.name,
+          index_patterns: t.index_patterns,
+          is_managed: t.is_managed,
+        }));
+        const kbPipelines = pipelines.map((p) => ({
+          name: p.name,
+          description: p.description,
+          processor_count: p.processor_count,
+        }));
+
+        Promise.all([
+          writeCategory(clusterUuid, 'indices', kbIndices),
+          writeCategory(clusterUuid, 'data-streams', kbDataStreams),
+          writeCategory(clusterUuid, 'templates', { index_templates: kbTemplates, component_templates: componentTemplates }),
+          writeCategory(clusterUuid, 'pipelines', kbPipelines),
+          writeCategory(clusterUuid, 'lifecycle', lifecyclePolicies),
+        ]).catch(() => {});
+      }
 
       const markdown = formatProfileAsMarkdown(profile, dsLifecycles);
       return textResponse(markdown);

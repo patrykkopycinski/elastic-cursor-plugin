@@ -35,6 +35,9 @@ function getTimestamp(): string {
   return new Date().toISOString();
 }
 
+// TODO: recordToolInvocation and recordSkillUsage are not yet wired into tool/skill
+// execution paths. Integrate them into the tool registration layer when ready to
+// collect opt-in adoption telemetry.
 export function recordToolInvocation(toolName: string): void {
   if (!OPT_IN) return;
   queue.push({
@@ -90,8 +93,8 @@ async function flush(): Promise<void> {
       },
       body: body.map((x) => JSON.stringify(x)).join('\n') + '\n',
     });
-  } catch {
-    // Re-queue on failure (best effort)
+  } catch (err) {
+    console.warn(`[telemetry] Failed to flush telemetry batch: ${err instanceof Error ? err.message : String(err)}`);
     queue.push(...batch);
   }
   if (queue.length === 0 && flushTimer) {

@@ -48,7 +48,8 @@ export async function ensureDir(dirPath: string): Promise<boolean> {
     // Re-apply in case the directory already existed with looser permissions
     await chmod(dirPath, DIR_MODE).catch(() => { });
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[knowledge-base] Failed to ensure directory ${dirPath}: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 }

@@ -56,11 +56,11 @@ export async function writeCategory<T>(
     await chmod(tmpPath, FILE_MODE).catch(() => { });
     await rename(tmpPath, filePath);
     return true;
-  } catch {
+  } catch (err) {
     try {
       await unlink(tmpPath);
-    } catch {
-      /* ignore cleanup failure */
+    } catch (cleanupErr) {
+      console.warn(`[knowledge-base] Failed to clean up temp file: ${cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr)}`);
     }
     return false;
   }
@@ -96,7 +96,8 @@ export async function purgeCategory(
   try {
     await unlink(categoryFile(clusterUuid, category));
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[knowledge-base] Failed to purge category ${category}: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 }
@@ -108,7 +109,8 @@ export async function purgeCluster(clusterUuid: string): Promise<boolean> {
   try {
     await rm(getKnowledgeBasePath(clusterUuid), { recursive: true, force: true });
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[knowledge-base] Failed to purge cluster data: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 }

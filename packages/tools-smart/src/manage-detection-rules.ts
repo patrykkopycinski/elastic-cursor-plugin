@@ -176,57 +176,50 @@ async function createRule(input: Extract<Input, { operation: 'create' }>): Promi
 }
 
 async function toggleRule(ruleId: string, enabled: boolean): Promise<string> {
-  const getRes = await kibanaFetch(`/api/detection_engine/rules?id=${ruleId}`);
-  if (!getRes.ok) return `Failed to find rule ${ruleId}: ${getRes.error ?? 'not found'}`;
-
-  const rule = getRes.data as DetectionRule;
   const res = await kibanaFetch('/api/detection_engine/rules', {
-    method: 'PUT',
-    body: { id: ruleId, name: rule.name, description: rule.description ?? '', type: rule.type, severity: rule.severity, risk_score: rule.risk_score, enabled },
+    method: 'PATCH',
+    body: { id: ruleId, enabled },
   });
 
   if (!res.ok) return `Failed to ${enabled ? 'enable' : 'disable'} rule: ${res.error ?? 'unknown error'}`;
+  const rule = res.data as DetectionRule;
   return `Rule "${rule.name}" (${ruleId}) has been ${enabled ? 'enabled' : 'disabled'}.`;
 }
 
 async function bulkEnable(input: Extract<Input, { operation: 'bulk_enable' }>): Promise<string> {
-  const parts = ['per_page=100'];
-  if (input.filter) parts.push(`filter=${encodeURIComponent(input.filter)}`);
-
-  const res = await kibanaFetch(`/api/detection_engine/rules/_find?${parts.join('&')}`);
-  if (!res.ok) return `Failed to query rules: ${res.error ?? 'unknown error'}`;
-
-  const body = res.data as { data?: DetectionRule[] };
-  let rules = body.data ?? [];
-
+  const queryParts: string[] = [];
+  if (input.filter) queryParts.push(input.filter);
   if (input.tags?.length) {
-    rules = rules.filter((r) => r.tags?.some((t) => input.tags!.includes(t)));
+    queryParts.push(input.tags.map((t) => `alert.attributes.tags:"${t}"`).join(' OR '));
   }
   if (input.severity) {
-    rules = rules.filter((r) => r.severity === input.severity);
+    queryParts.push(`alert.attributes.params.severity:"${input.severity}"`);
   }
 
-  const disabled = rules.filter((r) => !r.enabled);
-  if (disabled.length === 0) return 'No disabled rules matching the criteria.';
+  const body: Record<string, unknown> = {
+    action: 'enable',
+  };
 
-  let enabled = 0;
-  let failed = 0;
-  for (const rule of disabled) {
-    const toggleRes = await kibanaFetch('/api/detection_engine/rules', {
-      method: 'PUT',
-      body: { id: rule.id, name: rule.name, description: rule.description ?? '', type: rule.type, severity: rule.severity, risk_score: rule.risk_score, enabled: true },
-    });
-    if (toggleRes.ok) enabled++;
-    else failed++;
+  if (queryParts.length > 0) {
+    body.query = queryParts.join(' AND ');
+  } else {
+    const findRes = await kibanaFetch('/api/detection_engine/rules/_find?per_page=1&filter=alert.attributes.enabled:false');
+    if (!findRes.ok) return `Failed to query rules: ${findRes.error ?? 'unknown error'}`;
+    const findBody = findRes.data as { total?: number };
+    if ((findBody.total ?? 0) === 0) return 'No disabled rules found.';
+    body.query = 'alert.attributes.enabled:false';
   }
 
-  return [
-    `# Bulk Enable Results`,
-    '',
-    `- Matched: ${disabled.length} disabled rules`,
-    `- Enabled: ${enabled}`,
-    failed > 0 ? `- Failed: ${failed}` : '',
-  ].filter(Boolean).join('\n');
+  const res = await kibanaFetch('/api/detection_engine/rules/_bulk_action', {
+    method: 'POST',
+    body,
+  });
+
+  if (!res.ok) return `Failed to bulk enable rules: ${res.error ?? 'unknown error'}`;
+
+  const result = res.data as { attributes?: { results?: { updated?: unknown[] } }; success?: boolean; rules_count?: number } | undefined;
+  const count = (result as any)?.attributes?.results?.updated?.length ?? (result as any)?.rules_count ?? 0;
+  return `Bulk enable complete: ${count} rule(s) enabled.`;
 }
 
 async function deleteRule(ruleId: string): Promise<string> {

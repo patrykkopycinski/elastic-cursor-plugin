@@ -568,6 +568,36 @@ function formatResultAsMarkdown(result: DiscoveryResult): string {
   return lines.join('\n');
 }
 
+export async function runO11yDiscovery(options?: {
+  serviceNames?: string[];
+  timeRangeFrom?: string;
+  timeRangeTo?: string;
+  maxIndices?: number;
+}): Promise<{
+  services: ApmService[];
+  hosts: HostInfo[];
+  containers: ContainerInfo[];
+  logSources: LogSource[];
+  dataStreams: DataStreamInfo[];
+  iotProfiles: IoTProfile[];
+} | null> {
+  const now = new Date();
+  const from = options?.timeRangeFrom ?? new Date(now.getTime() - DEFAULT_TIME_RANGE_MS).toISOString();
+  const to = options?.timeRangeTo ?? now.toISOString();
+  const maxIndices = options?.maxIndices ?? DEFAULT_MAX_INDICES;
+
+  const [services, hosts, containers, logSources, dataStreams, iotProfiles] = await Promise.all([
+    discoverApmServices(from, to, options?.serviceNames),
+    discoverHosts(from, to),
+    discoverContainers(from, to),
+    discoverLogSources(from, to),
+    discoverDataStreams(maxIndices),
+    discoverIoTProfiles(from, to),
+  ]);
+
+  return { services, hosts, containers, logSources, dataStreams, iotProfiles };
+}
+
 export function registerDiscoverO11yData(server: ToolRegistrationContext): void {
   server.registerTool(
     'discover_o11y_data',

@@ -18,6 +18,7 @@ import {
   writeCategory,
   type CategoryName,
 } from '@elastic-cursor-plugin/knowledge-base';
+import type { CacheStatus } from '@elastic-cursor-plugin/knowledge-base';
 
 const ALL_SECTIONS: CategoryName[] = [
   '_meta', 'indices', 'data-streams', 'templates', 'pipelines', 'lifecycle', 'o11y', 'security',
@@ -106,6 +107,36 @@ const SECTION_LABELS: Record<CategoryName, string> = {
   'security': 'Security',
 };
 
+async function autoPopulateBasicKnowledge(clusterUuid: string): Promise<void> {
+  const [clusterRes, indexRes] = await Promise.all([
+    esFetch('/'),
+    esFetch('/_resolve/index/*?expand_wildcards=open'),
+  ]);
+
+  if (clusterRes.ok) {
+    const d = clusterRes.data as Record<string, unknown>;
+    const version = d.version as Record<string, unknown> | undefined;
+    await writeCategory(clusterUuid, '_meta', {
+      name: (d.cluster_name as string) ?? 'unknown',
+      version: (version?.number as string) ?? 'unknown',
+      lastAccessed: new Date().toISOString(),
+    });
+  }
+
+  if (indexRes.ok) {
+    const data = indexRes.data as {
+      indices?: Array<{ name: string }>;
+      data_streams?: Array<{ name: string }>;
+    };
+    const indices = (data.indices ?? []).filter((i) => !i.name.startsWith('.'));
+    const dataStreams = data.data_streams ?? [];
+    await Promise.all([
+      writeCategory(clusterUuid, 'indices', indices),
+      writeCategory(clusterUuid, 'data-streams', dataStreams),
+    ]);
+  }
+}
+
 export function registerGetClusterContext(server: ToolRegistrationContext): void {
   server.registerTool(
     'get_cluster_context',
@@ -136,10 +167,23 @@ export function registerGetClusterContext(server: ToolRegistrationContext): void
         ? ALL_SECTIONS.filter((s) => input.sections!.includes(s))
         : ALL_SECTIONS;
 
+      const statuses = new Map<CategoryName, { status: CacheStatus; updatedAt: string | null }>();
+      for (const section of requestedSections) {
+        statuses.set(section, await checkCategory(clusterUuid, section));
+      }
+
+      const allMissing = [...statuses.values()].every((s) => s.status === 'missing');
+      if (allMissing) {
+        await autoPopulateBasicKnowledge(clusterUuid);
+        for (const section of requestedSections) {
+          statuses.set(section, await checkCategory(clusterUuid, section));
+        }
+      }
+
       const lines: string[] = ['# Cluster Knowledge Base', ''];
 
       for (const section of requestedSections) {
-        const { status, updatedAt } = await checkCategory(clusterUuid, section);
+        const { status, updatedAt } = statuses.get(section)!;
         const label = SECTION_LABELS[section];
 
         if (status === 'missing') {

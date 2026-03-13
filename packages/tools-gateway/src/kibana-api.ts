@@ -27,13 +27,24 @@ export function registerKibanaApi(server: ToolRegistrationContext): void {
     },
     async (args) => {
       const { method, path, body } = args as { method: string; path: string; body?: Record<string, unknown> };
+      const isInternal = path.startsWith('/internal/');
       try {
         const result = await kibanaFetch(path, {
           method: method.toUpperCase(),
           body,
         });
         if (!result.ok) {
-          return errorResponse(result.error ?? 'Kibana API request failed');
+          const errMsg = result.error ?? 'Kibana API request failed';
+          if (isInternal) {
+            return errorResponse(`⚠️ Warning: /internal/ APIs are unsupported and may change or break without notice.\n\n${errMsg}`);
+          }
+          return errorResponse(errMsg);
+        }
+        if (isInternal) {
+          return jsonResponse({
+            _warning: '⚠️ This used an /internal/ API that is unsupported and may change or break without notice. Prefer /api/ endpoints for stable integration.',
+            ...((typeof result.data === 'object' && result.data !== null) ? result.data as Record<string, unknown> : { data: result.data }),
+          });
         }
         return jsonResponse(result.data);
       } catch (err) {

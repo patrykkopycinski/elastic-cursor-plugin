@@ -41,12 +41,12 @@ export function registerCreateAgentBuilderTool(server: ToolRegistrationContext):
     {
       title: 'Create Agent Builder Tool',
       description:
-        'Create a custom tool in Kibana Agent Builder. Supported types: "esql" (pre-defined ES|QL query with parameters) and "index_search" (natural language search scoped to an index pattern).',
+        'Create a custom tool in Kibana Agent Builder. Supported types: "esql" (pre-defined ES|QL query with parameters), "index_search" (natural language search scoped to an index pattern), "workflow" (multi-step workflow tool), and "mcp" (MCP-connected tool).',
       inputSchema: z.object({
         id: z.string().describe('Unique tool ID (kebab-case, e.g. "my-search-tool")'),
         type: z
-          .enum(['esql', 'index_search'])
-          .describe('Tool type: "esql" for ES|QL query tools, "index_search" for search tools'),
+          .enum(['esql', 'index_search', 'workflow', 'mcp'])
+          .describe('Tool type: "esql" for ES|QL query tools, "index_search" for search tools, "workflow" for workflow tools, "mcp" for MCP tools'),
         description: z.string().describe('Human-readable description of what the tool does'),
         tags: z.array(z.string()).optional().describe('Optional tags for categorization'),
         configuration: z
@@ -107,13 +107,14 @@ export function registerTestAgentBuilderTool(server: ToolRegistrationContext): v
     {
       title: 'Test Agent Builder Tool',
       description:
-        'Execute/test a tool registered in Agent Builder by sending a query to the converse API with a specific agent or the default agent.',
+        'Execute/test a tool registered in Agent Builder by sending a query. Use tool_id for direct tool execution via the _execute endpoint, or agent_id to test via the converse API with a specific agent.',
       inputSchema: z.object({
-        query: z.string().describe('The test query to send to the agent'),
+        query: z.string().describe('The test query to send'),
+        tool_id: z.string().optional().describe('Tool ID to execute directly (uses _execute endpoint)'),
         agent_id: z
           .string()
           .optional()
-          .describe('Agent ID to test with (defaults to "elastic-ai-agent")'),
+          .describe('Agent ID to test with via conversation (uses converse endpoint, defaults to "elastic-ai-agent")'),
         connector_id: z
           .string()
           .optional()
@@ -121,11 +122,30 @@ export function registerTestAgentBuilderTool(server: ToolRegistrationContext): v
       }),
     },
     async (args) => {
-      const { query, agent_id, connector_id } = args as {
+      const { query, tool_id, agent_id, connector_id } = args as {
         query: string;
+        tool_id?: string;
         agent_id?: string;
         connector_id?: string;
       };
+
+      if (tool_id && !agent_id) {
+        const executeBody: Record<string, unknown> = {
+          tool_id,
+          tool_params: { query },
+        };
+        if (connector_id) executeBody.connector_id = connector_id;
+
+        const res = await kibanaFetch(`${AGENT_BUILDER_API}/tools/_execute`, {
+          method: 'POST',
+          body: executeBody,
+        });
+
+        if (!res.ok) {
+          return errorResponse(res.error ?? 'Failed to execute Agent Builder tool');
+        }
+        return jsonResponse(res.data);
+      }
 
       const body: Record<string, unknown> = {
         input: query,

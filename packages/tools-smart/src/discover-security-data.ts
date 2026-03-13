@@ -300,6 +300,30 @@ function formatResultAsMarkdown(result: SecurityDiscoveryResult): string {
   return lines.join('\n');
 }
 
+export async function runSecurityDiscovery(options?: {
+  timeRangeFrom?: string;
+  timeRangeTo?: string;
+  dataSourceCategories?: string[];
+  includeRules?: boolean;
+}): Promise<{
+  dataSources: SecurityDataSource[];
+  ruleCoverage: RuleCoverage | null;
+  alertSummary: AlertSummary | null;
+} | null> {
+  const now = new Date();
+  const from = options?.timeRangeFrom ?? new Date(now.getTime() - DEFAULT_TIME_RANGE_MS).toISOString();
+  const to = options?.timeRangeTo ?? now.toISOString();
+  const includeRules = options?.includeRules !== false;
+
+  const [dataSources, ruleCoverage, alertSummary] = await Promise.all([
+    discoverDataSources(from, to, options?.dataSourceCategories),
+    includeRules ? discoverRuleCoverage() : Promise.resolve(null),
+    discoverAlertVolume(from, to),
+  ]);
+
+  return { dataSources, ruleCoverage, alertSummary };
+}
+
 export function registerDiscoverSecurityData(server: ToolRegistrationContext): void {
   server.registerTool(
     'discover_security_data',

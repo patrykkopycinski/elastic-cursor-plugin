@@ -12,10 +12,11 @@ import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-type
 import { textResponse, errorResponse } from '@elastic-cursor-plugin/shared-types';
 import { esFetch } from '@elastic-cursor-plugin/shared-http';
 import {
-  checkCategory,
   writeCategory,
   type CategoryName,
 } from '@elastic-cursor-plugin/knowledge-base';
+import { runO11yDiscovery } from './discover-o11y-data.js';
+import { runSecurityDiscovery } from './discover-security-data.js';
 
 const REFRESHABLE_SECTIONS: CategoryName[] = [
   '_meta', 'indices', 'data-streams', 'templates', 'pipelines', 'lifecycle', 'o11y', 'security',
@@ -129,12 +130,41 @@ export function registerRefreshClusterKnowledge(server: ToolRegistrationContext)
           continue;
         }
 
-        if (section === 'o11y' || section === 'security') {
-          const { status } = await checkCategory(clusterUuid, section);
-          if (status === 'missing' || status === 'expired') {
-            failed.push(`${section} (run discover_${section === 'o11y' ? 'o11y_data' : 'security_data'} to populate)`);
-          } else {
-            refreshed.push(`${section} (cached, still valid)`);
+        if (section === 'o11y') {
+          try {
+            const o11yResult = await runO11yDiscovery();
+            if (o11yResult) {
+              const { services, hosts, containers, logSources, iotProfiles } = o11yResult;
+              await writeCategory(clusterUuid, 'o11y', {
+                services, hosts, containers, log_sources: logSources, iot_profiles: iotProfiles,
+              });
+              refreshed.push('o11y');
+            } else {
+              failed.push('o11y');
+            }
+          } catch (err) {
+            console.warn(`[refresh-cluster-knowledge] o11y discovery failed: ${err instanceof Error ? err.message : String(err)}`);
+            failed.push('o11y');
+          }
+          continue;
+        }
+
+        if (section === 'security') {
+          try {
+            const secResult = await runSecurityDiscovery();
+            if (secResult) {
+              await writeCategory(clusterUuid, 'security', {
+                data_sources: secResult.dataSources,
+                rule_coverage: secResult.ruleCoverage,
+                alert_summary: secResult.alertSummary,
+              });
+              refreshed.push('security');
+            } else {
+              failed.push('security');
+            }
+          } catch (err) {
+            console.warn(`[refresh-cluster-knowledge] security discovery failed: ${err instanceof Error ? err.message : String(err)}`);
+            failed.push('security');
           }
           continue;
         }
