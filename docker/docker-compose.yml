@@ -1,0 +1,253 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    container_name: elastic-plugin-eval-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=changeme
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.http.ssl.enabled=false
+      - xpack.license.self_generated.type=trial
+    ports:
+      - "9220:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u elastic:changeme http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.0
+    container_name: elastic-plugin-eval-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=changeme
+      - xpack.security.enabled=true
+      - xpack.encryptedSavedObjects.encryptionKey=a7ffc6f8bf1ed76651c14756a061d662
+      - server.host=0.0.0.0
+    ports:
+      - "5620:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  setup:
+    image: curlimages/curl:latest
+    container_name: elastic-plugin-eval-setup
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "==> Waiting for Elasticsearch..."
+        until curl -sf -u elastic:changeme http://elasticsearch:9200/_cluster/health; do sleep 2; done
+        echo ""
+
+        echo "==> Setting kibana_system password..."
+        curl -sf -u elastic:changeme -X POST \
+          "http://elasticsearch:9200/_security/user/kibana_system/_password" \
+          -H 'Content-Type: application/json' \
+          -d '{"password":"changeme"}'
+        echo ""
+
+        echo "==> Creating eval API key..."
+        curl -sf -u elastic:changeme -X POST \
+          "http://elasticsearch:9200/_security/api_key" \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "name": "elastic-plugin-eval-key",
+            "role_descriptors": {
+              "all_access": {
+                "cluster": ["all"],
+                "index": [{"names": ["*"], "privileges": ["all"]}]
+              }
+            }
+          }' | tee /tmp/api-key-response.json
+        echo ""
+
+        echo "==> Seeding sample data..."
+
+        echo "--- Creating sample-logs index with documents ---"
+        curl -sf -u elastic:changeme -X PUT \
+          "http://elasticsearch:9200/sample-logs" \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
+            "mappings": {
+              "properties": {
+                "@timestamp": {"type": "date"},
+                "message": {"type": "text"},
+                "level": {"type": "keyword"},
+                "service": {"type": "keyword"},
+                "host": {"type": "keyword"}
+              }
+            }
+          }'
+        echo ""
+
+        curl -sf -u elastic:changeme -X POST \
+          "http://elasticsearch:9200/sample-logs/_bulk" \
+          -H 'Content-Type: application/x-ndjson' \
+          -d '{"index":{}}
+        {"@timestamp":"2024-01-15T10:00:00Z","message":"Application started successfully","level":"info","service":"web-api","host":"server-01"}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:01:00Z","message":"Request processed in 120ms","level":"info","service":"web-api","host":"server-01"}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:02:00Z","message":"Database connection timeout","level":"error","service":"web-api","host":"server-01"}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:03:00Z","message":"Retrying database connection","level":"warn","service":"web-api","host":"server-01"}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:04:00Z","message":"Cache miss for key user:123","level":"debug","service":"web-api","host":"server-02"}
+        '
+        echo ""
+
+        echo "--- Creating sample-metrics index ---"
+        curl -sf -u elastic:changeme -X PUT \
+          "http://elasticsearch:9200/sample-metrics" \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
+            "mappings": {
+              "properties": {
+                "@timestamp": {"type": "date"},
+                "host": {"type": "keyword"},
+                "cpu_percent": {"type": "float"},
+                "memory_used_bytes": {"type": "long"},
+                "disk_used_percent": {"type": "float"}
+              }
+            }
+          }'
+        echo ""
+
+        curl -sf -u elastic:changeme -X POST \
+          "http://elasticsearch:9200/sample-metrics/_bulk" \
+          -H 'Content-Type: application/x-ndjson' \
+          -d '{"index":{}}
+        {"@timestamp":"2024-01-15T10:00:00Z","host":"server-01","cpu_percent":45.2,"memory_used_bytes":4294967296,"disk_used_percent":62.1}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:01:00Z","host":"server-01","cpu_percent":78.9,"memory_used_bytes":5368709120,"disk_used_percent":62.3}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:00:00Z","host":"server-02","cpu_percent":12.1,"memory_used_bytes":2147483648,"disk_used_percent":45.0}
+        '
+        echo ""
+
+        echo "--- Creating traces-apm-default index (APM-like) ---"
+        curl -sf -u elastic:changeme -X PUT \
+          "http://elasticsearch:9200/traces-apm-default" \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
+            "mappings": {
+              "properties": {
+                "@timestamp": {"type": "date"},
+                "service.name": {"type": "keyword"},
+                "service.environment": {"type": "keyword"},
+                "transaction.name": {"type": "keyword"},
+                "transaction.type": {"type": "keyword"},
+                "transaction.duration.us": {"type": "long"},
+                "transaction.result": {"type": "keyword"},
+                "span.type": {"type": "keyword"}
+              }
+            }
+          }'
+        echo ""
+
+        curl -sf -u elastic:changeme -X POST \
+          "http://elasticsearch:9200/traces-apm-default/_bulk" \
+          -H 'Content-Type: application/x-ndjson' \
+          -d '{"index":{}}
+        {"@timestamp":"2024-01-15T10:00:00Z","service.name":"web-api","service.environment":"production","transaction.name":"GET /api/users","transaction.type":"request","transaction.duration.us":15000,"transaction.result":"HTTP 2xx"}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:00:01Z","service.name":"web-api","service.environment":"production","transaction.name":"POST /api/orders","transaction.type":"request","transaction.duration.us":45000,"transaction.result":"HTTP 2xx"}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:00:02Z","service.name":"payment-service","service.environment":"production","transaction.name":"process_payment","transaction.type":"custom","transaction.duration.us":250000,"transaction.result":"success"}
+        '
+        echo ""
+
+        echo "--- Creating metrics-apm.internal-default index ---"
+        curl -sf -u elastic:changeme -X PUT \
+          "http://elasticsearch:9200/metrics-apm.internal-default" \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
+            "mappings": {
+              "properties": {
+                "@timestamp": {"type": "date"},
+                "service.name": {"type": "keyword"},
+                "metricset.name": {"type": "keyword"}
+              }
+            }
+          }'
+        echo ""
+
+        echo "--- Creating logs-* index for log shipping discovery ---"
+        curl -sf -u elastic:changeme -X PUT \
+          "http://elasticsearch:9200/logs-generic-default" \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
+            "mappings": {
+              "properties": {
+                "@timestamp": {"type": "date"},
+                "message": {"type": "text"},
+                "log.level": {"type": "keyword"},
+                "service.name": {"type": "keyword"}
+              }
+            }
+          }'
+        echo ""
+
+        curl -sf -u elastic:changeme -X POST \
+          "http://elasticsearch:9200/logs-generic-default/_bulk" \
+          -H 'Content-Type: application/x-ndjson' \
+          -d '{"index":{}}
+        {"@timestamp":"2024-01-15T10:00:00Z","message":"Nginx access log entry","log.level":"info","service.name":"nginx"}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:00:01Z","message":"Error connecting to upstream","log.level":"error","service.name":"nginx"}
+        '
+        echo ""
+
+        echo "--- Creating .siem-signals-default for security discovery ---"
+        curl -sf -u elastic:changeme -X PUT \
+          "http://elasticsearch:9200/.siem-signals-default" \
+          -H 'Content-Type: application/json' \
+          -d '{"settings":{"number_of_shards":1,"number_of_replicas":0}}'
+        echo ""
+
+        echo "--- Creating .alerts-security.alerts-default for security alerts ---"
+        curl -sf -u elastic:changeme -X PUT \
+          "http://elasticsearch:9200/.alerts-security.alerts-default" \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
+            "mappings": {
+              "properties": {
+                "@timestamp": {"type": "date"},
+                "kibana.alert.rule.name": {"type": "keyword"},
+                "kibana.alert.severity": {"type": "keyword"},
+                "kibana.alert.status": {"type": "keyword"}
+              }
+            }
+          }'
+        echo ""
+
+        curl -sf -u elastic:changeme -X POST \
+          "http://elasticsearch:9200/.alerts-security.alerts-default/_bulk" \
+          -H 'Content-Type: application/x-ndjson' \
+          -d '{"index":{}}
+        {"@timestamp":"2024-01-15T10:00:00Z","kibana.alert.rule.name":"Suspicious Process","kibana.alert.severity":"high","kibana.alert.status":"open"}
+        {"index":{}}
+        {"@timestamp":"2024-01-15T10:01:00Z","kibana.alert.rule.name":"Brute Force Attempt","kibana.alert.severity":"medium","kibana.alert.status":"open"}
+        '
+        echo ""
+
+        echo "==> All seed data created successfully!"
+
+volumes:
+  es-data:
+    driver: local

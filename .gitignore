@@ -2,12 +2,15 @@ node_modules/
 dist/
 *.log
 .env
+.env.local
 .DS_Store
 *.tgz
 coverage/
 .nyc_output/
 .cursor/
 openspec/
+.cursor-plugin-evals/
+eval-results/
 docs/PRESENTATION.html
 docs/PRESENTATION.pdf
 docs/PRESENTATION.pptx

@@ -1,0 +1,211 @@
+name: Plugin Evals
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      layer:
+        description: "Layer to run (leave empty for all)"
+        required: false
+        type: choice
+        options:
+          - ""
+          - static
+          - unit
+          - integration
+          - llm
+          - performance
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-unit:
+    name: Static & Unit Evals
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Run static evals
+        run: npx cursor-plugin-evals run --layer static --verbose
+
+      - name: Run unit evals
+        run: npx cursor-plugin-evals run --layer unit --verbose
+
+  integration:
+    name: Integration Evals
+    runs-on: ubuntu-latest
+    needs: static-unit
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+        ports:
+          - 9200:9200
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "true"
+          ELASTIC_PASSWORD: changeme
+          ES_JAVA_OPTS: -Xms1g -Xmx1g
+          xpack.security.http.ssl.enabled: "false"
+          xpack.license.self_generated.type: trial
+        options: >-
+          --health-cmd "curl -sf -u elastic:changeme http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Seed test data
+        env:
+          ES_URL: http://localhost:9200
+          ES_USERNAME: elastic
+          ES_PASSWORD: changeme
+        run: bash scripts/seed-test-data.sh
+
+      - name: Run integration evals
+        env:
+          ES_URL: http://localhost:9200
+          ES_USERNAME: elastic
+          ES_PASSWORD: changeme
+        run: npx cursor-plugin-evals run --layer integration --verbose
+
+  performance:
+    name: Performance Evals
+    runs-on: ubuntu-latest
+    needs: integration
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+        ports:
+          - 9200:9200
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "true"
+          ELASTIC_PASSWORD: changeme
+          ES_JAVA_OPTS: -Xms1g -Xmx1g
+          xpack.security.http.ssl.enabled: "false"
+          xpack.license.self_generated.type: trial
+        options: >-
+          --health-cmd "curl -sf -u elastic:changeme http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Seed test data
+        env:
+          ES_URL: http://localhost:9200
+          ES_USERNAME: elastic
+          ES_PASSWORD: changeme
+        run: bash scripts/seed-test-data.sh
+
+      - name: Run performance evals
+        env:
+          ES_URL: http://localhost:9200
+          ES_USERNAME: elastic
+          ES_PASSWORD: changeme
+        run: npx cursor-plugin-evals run --layer performance --verbose
+
+  llm:
+    name: LLM Evals
+    runs-on: ubuntu-latest
+    needs: integration
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+        ports:
+          - 9200:9200
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "true"
+          ELASTIC_PASSWORD: changeme
+          ES_JAVA_OPTS: -Xms1g -Xmx1g
+          xpack.security.http.ssl.enabled: "false"
+          xpack.license.self_generated.type: trial
+        options: >-
+          --health-cmd "curl -sf -u elastic:changeme http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Seed test data
+        env:
+          ES_URL: http://localhost:9200
+          ES_USERNAME: elastic
+          ES_PASSWORD: changeme
+        run: bash scripts/seed-test-data.sh
+
+      - name: Run LLM evals
+        env:
+          ES_URL: http://localhost:9200
+          ES_USERNAME: elastic
+          ES_PASSWORD: changeme
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npx cursor-plugin-evals run --layer llm --verbose
+
+  ci-gate:
+    name: CI Quality Gate
+    runs-on: ubuntu-latest
+    needs: [static-unit, integration, performance]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.static-unit.result }}" != "success" ]]; then
+            echo "Static/Unit evals failed"
+            exit 1
+          fi
+          if [[ "${{ needs.integration.result }}" != "success" ]]; then
+            echo "Integration evals failed"
+            exit 1
+          fi
+          if [[ "${{ needs.performance.result }}" != "success" ]]; then
+            echo "Performance evals failed"
+            exit 1
+          fi
+          echo "All required eval gates passed!"
