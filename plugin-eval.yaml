@@ -1,0 +1,105 @@
+plugin:
+  name: elastic-developer-experience
+  dir: .
+  pluginRoot: .
+  buildCommand: npm run build
+  entry: packages/mcp-server/dist/index.js
+  env:
+    ES_URL: "${ES_URL}"
+    ES_API_KEY: "${ES_API_KEY}"
+
+defaults:
+  timeout: 30000
+  judgeModel: gpt-4o-mini
+
+suites:
+  - name: static-checks
+    layer: static
+    tests:
+      - name: manifest-valid
+        check: manifest
+      - name: skill-frontmatter-valid
+        check: skill_frontmatter
+      - name: rule-frontmatter-valid
+        check: rule_frontmatter
+      - name: agent-frontmatter-valid
+        check: agent_frontmatter
+      - name: command-frontmatter-valid
+        check: command_frontmatter
+      - name: mcp-config-valid
+        check: mcp_config
+      - name: component-references
+        check: component_references
+      - name: naming-conventions
+        check: naming_conventions
+
+  - name: unit-registration
+    layer: unit
+    tests:
+      - name: all-tools-register
+        check: registration
+        expectedTools:
+          - elasticsearch_api
+          - kibana_api
+          - cloud_api
+          - esql_query
+          - discover_data
+          - discover_o11y_data
+          - discover_security_data
+          - get_data_summary
+          - get_security_summary
+          - get_cluster_context
+          - refresh_cluster_knowledge
+          - clear_cluster_knowledge
+          - setup_apm
+          - setup_log_shipping
+          - create_dashboard
+          - create_iot_dashboard
+          - create_alert_rule
+          - generate_search_ui
+          - siem_quickstart
+          - manage_detection_rules
+          - triage_alerts
+          - manage_cases
+          - kibana_info
+          - get_deployment_guide
+          - get_connection_config
+          - list_agent_builder_tools
+          - create_agent_builder_tool
+          - delete_agent_builder_tool
+          - test_agent_builder_tool
+          - list_agent_builder_agents
+          - create_agent_builder_agent
+          - delete_agent_builder_agent
+          - get_agent_builder_mcp_config
+          - list_workflows
+          - run_workflow
+          - save_workflow
+          - deploy_telemetry_dashboard
+
+      - name: schema-validation
+        check: schema
+
+  - name: unit-conditional-registration
+    layer: unit
+    tests:
+      - name: gateway-tools-require-es
+        check: conditional_registration
+        tool: elasticsearch_api
+        env:
+          ES_URL: "http://localhost:9200"
+          ES_API_KEY: "test-key"
+
+      - name: kibana-tools-require-kibana
+        check: conditional_registration
+        tool: kibana_api
+        env:
+          ES_URL: "http://localhost:9200"
+          ES_API_KEY: "test-key"
+          KIBANA_URL: "http://localhost:5601"
+
+      - name: cloud-tools-require-cloud-key
+        check: conditional_registration
+        tool: cloud_api
+        env:
+          ELASTIC_CLOUD_API_KEY: "test-cloud-key"
