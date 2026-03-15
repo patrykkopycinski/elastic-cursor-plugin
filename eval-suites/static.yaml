@@ -1,0 +1,64 @@
+- name: static-manifest
+  layer: static
+  tests:
+    - name: manifest-valid
+      check: manifest
+      difficulty: simple
+
+    - name: mcp-config-valid
+      check: mcp_config
+      difficulty: simple
+
+    - name: component-references-valid
+      check: component_references
+      difficulty: moderate
+
+    - name: cross-component-coherence
+      check: cross_component_coherence
+      difficulty: moderate
+
+    - name: naming-conventions
+      check: naming_conventions
+      difficulty: simple
+
+- name: static-skills
+  layer: static
+  tests:
+    - name: skill-frontmatter-all
+      check: skill_frontmatter
+      difficulty: simple
+
+    - name: skill-frontmatter-security-full-setup
+      check: skill_frontmatter
+      components: [security-full-setup]
+      difficulty: simple
+
+    - name: skill-frontmatter-o11y-full-setup
+      check: skill_frontmatter
+      components: [o11y-full-setup]
+      difficulty: simple
+
+    - name: skill-frontmatter-agent-builder
+      check: skill_frontmatter
+      components: [agent-builder-skill-builder]
+      difficulty: simple
+
+    - name: skill-frontmatter-plugin-self-improve
+      check: skill_frontmatter
+      components: [plugin-self-improve]
+      difficulty: simple
+
+- name: static-rules-agents-commands
+  layer: static
+  tests:
+    - name: rule-frontmatter-all
+      check: rule_frontmatter
+      difficulty: simple
+
+    - name: agent-frontmatter-all
+      check: agent_frontmatter
+      difficulty: simple
+
+    - name: command-frontmatter-all
+      check: command_frontmatter
+      difficulty: simple

@@ -1,0 +1,142 @@
+- name: unit-tool-registration
+  layer: unit
+  tests:
+    - name: all-gateway-tools-register
+      check: registration
+      difficulty: simple
+      expected_tools:
+        - elasticsearch_api
+        - esql_query
+
+    - name: all-discovery-tools-register
+      check: registration
+      difficulty: simple
+      expected_tools:
+        - discover_data
+        - discover_o11y_data
+        - discover_security_data
+        - get_data_summary
+        - get_security_summary
+        - get_cluster_context
+        - refresh_cluster_knowledge
+        - clear_cluster_knowledge
+
+    - name: all-setup-tools-register
+      check: registration
+      difficulty: simple
+      expected_tools:
+        - setup_apm
+        - setup_log_shipping
+        - create_dashboard
+        - create_iot_dashboard
+        - create_alert_rule
+        - generate_search_ui
+        - siem_quickstart
+        - get_deployment_guide
+        - get_connection_config
+        - kibana_info
+
+    - name: all-security-tools-register
+      check: registration
+      difficulty: simple
+      expected_tools:
+        - manage_detection_rules
+        - triage_alerts
+        - manage_cases
+
+    - name: all-agent-builder-tools-register
+      check: registration
+      difficulty: simple
+      expected_tools:
+        - list_agent_builder_tools
+        - create_agent_builder_tool
+        - delete_agent_builder_tool
+        - test_agent_builder_tool
+        - list_agent_builder_agents
+        - create_agent_builder_agent
+        - delete_agent_builder_agent
+        - get_agent_builder_mcp_config
+
+    - name: all-workflow-tools-register
+      check: registration
+      difficulty: simple
+      expected_tools:
+        - list_workflows
+        - run_workflow
+        - save_workflow
+
+    - name: telemetry-tool-registers
+      check: registration
+      difficulty: simple
+      expected_tools:
+        - deploy_telemetry_dashboard
+
+- name: unit-schema-validation
+  layer: unit
+  tests:
+    - name: all-tool-schemas-valid
+      check: schema
+      difficulty: moderate
+
+- name: unit-conditional-registration
+  layer: unit
+  tests:
+    - name: gateway-es-requires-es-url
+      check: conditional_registration
+      difficulty: moderate
+      expected_tools:
+        - elasticsearch_api
+        - esql_query
+      env:
+        ES_URL: "${ES_URL}"
+        ES_USERNAME: "${ES_USERNAME}"
+        ES_PASSWORD: "${ES_PASSWORD}"
+      minimal_env: {}
+
+    - name: kibana-api-requires-kibana-url
+      check: conditional_registration
+      difficulty: moderate
+      expected_tools:
+        - kibana_api
+      env:
+        ES_URL: "${ES_URL}"
+        ES_USERNAME: "${ES_USERNAME}"
+        ES_PASSWORD: "${ES_PASSWORD}"
+        KIBANA_URL: "http://localhost:5620"
+      minimal_env:
+        ES_URL: "${ES_URL}"
+        ES_USERNAME: "${ES_USERNAME}"
+        ES_PASSWORD: "${ES_PASSWORD}"
+
+    - name: cloud-api-requires-cloud-key
+      check: conditional_registration
+      difficulty: moderate
+      expected_tools:
+        - cloud_api
+      env:
+        ELASTIC_CLOUD_API_KEY: "test-cloud-key"
+      minimal_env: {}
+
+- name: unit-input-validation
+  layer: unit
+  tests:
+    - name: kibana-api-rejects-invalid-method
+      check: response_format
+      tool: kibana_api
+      args:
+        method: TRACE
+        path: /api/status
+
+    - name: elasticsearch-api-rejects-path-traversal
+      check: response_format
+      tool: elasticsearch_api
+      args:
+        method: GET
+        path: /../../etc/passwd
+
+    - name: kibana-api-rejects-path-traversal
+      check: response_format
+      tool: kibana_api
+      args:
+        method: GET
+        path: /../../etc/passwd

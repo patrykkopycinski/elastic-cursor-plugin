@@ -1,0 +1,444 @@
+- name: performance-gateway
+  layer: performance
+  require_env: [ES_URL]
+  tests:
+    - name: cluster-health-latency
+      tool: elasticsearch_api
+      difficulty: simple
+      args:
+        method: GET
+        path: /_cluster/health
+      warmup: 3
+      iterations: 20
+      thresholds:
+        p50: 200
+        p95: 1000
+        p99: 2000
+
+    - name: cat-indices-latency
+      tool: elasticsearch_api
+      difficulty: simple
+      args:
+        method: GET
+        path: /_cat/indices?format=json
+      warmup: 2
+      iterations: 15
+      thresholds:
+        p50: 300
+        p95: 1500
+
+    - name: esql-query-latency
+      tool: esql_query
+      difficulty: simple
+      args:
+        query: "SHOW INFO"
+      warmup: 2
+      iterations: 15
+      thresholds:
+        p50: 500
+        p95: 2000
+
+- name: performance-discovery
+  layer: performance
+  require_env: [ES_URL]
+  tests:
+    - name: cluster-context-latency
+      tool: get_cluster_context
+      difficulty: simple
+      args: {}
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: discover-data-latency
+      tool: discover_data
+      difficulty: moderate
+      args: {}
+      warmup: 1
+      iterations: 5
+      thresholds:
+        p95: 10000
+
+- name: performance-setup
+  layer: performance
+  tests:
+    - name: deployment-guide-latency
+      tool: get_deployment_guide
+      difficulty: simple
+      args:
+        preference: cloud
+      warmup: 2
+      iterations: 20
+      thresholds:
+        p50: 50
+        p95: 200
+
+    - name: connection-config-latency
+      tool: get_connection_config
+      difficulty: simple
+      args:
+        url: "http://localhost:9200"
+        language: node
+      warmup: 2
+      iterations: 20
+      thresholds:
+        p50: 50
+        p95: 200
+
+    - name: setup-apm-latency
+      tool: setup_apm
+      difficulty: simple
+      args:
+        framework: express
+      warmup: 2
+      iterations: 20
+      thresholds:
+        p50: 50
+        p95: 200
+
+- name: performance-security-tools
+  layer: performance
+  require_env: [ES_URL]
+  tests:
+    - name: manage-detection-rules-latency
+      tool: manage_detection_rules
+      difficulty: simple
+      args:
+        operation: list
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: triage-alerts-latency
+      tool: triage_alerts
+      difficulty: simple
+      args:
+        operation: list
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: manage-cases-latency
+      tool: manage_cases
+      difficulty: simple
+      args:
+        operation: list
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: get-security-summary-latency
+      tool: get_security_summary
+      difficulty: moderate
+      args: {}
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+- name: performance-o11y-tools
+  layer: performance
+  require_env: [ES_URL]
+  tests:
+    - name: discover-o11y-data-latency
+      tool: discover_o11y_data
+      difficulty: moderate
+      args: {}
+      warmup: 1
+      iterations: 5
+      thresholds:
+        p95: 10000
+
+    - name: discover-security-data-latency
+      tool: discover_security_data
+      difficulty: moderate
+      args: {}
+      warmup: 1
+      iterations: 5
+      thresholds:
+        p95: 10000
+
+    - name: refresh-cluster-knowledge-latency
+      tool: refresh_cluster_knowledge
+      difficulty: simple
+      args: {}
+      warmup: 1
+      iterations: 5
+      thresholds:
+        p95: 10000
+
+    - name: clear-cluster-knowledge-latency
+      tool: clear_cluster_knowledge
+      difficulty: simple
+      args: {}
+      warmup: 1
+      iterations: 5
+      thresholds:
+        p95: 10000
+
+- name: performance-setup-tools
+  layer: performance
+  tests:
+    - name: setup-log-shipping-latency
+      tool: setup_log_shipping
+      difficulty: simple
+      args:
+        log_path: "/var/log/app/*.log"
+      warmup: 2
+      iterations: 20
+      thresholds:
+        p50: 50
+        p95: 200
+
+    - name: generate-search-ui-latency
+      tool: generate_search_ui
+      difficulty: simple
+      args:
+        framework: react
+      warmup: 2
+      iterations: 20
+      thresholds:
+        p50: 50
+        p95: 200
+
+    - name: siem-quickstart-latency
+      tool: siem_quickstart
+      difficulty: simple
+      args: {}
+      warmup: 2
+      iterations: 20
+      thresholds:
+        p50: 50
+        p95: 200
+
+    - name: kibana-info-latency
+      tool: kibana_info
+      difficulty: simple
+      args: {}
+      warmup: 2
+      iterations: 20
+      thresholds:
+        p50: 50
+        p95: 200
+
+- name: performance-dashboard-tools
+  layer: performance
+  tests:
+    - name: create-dashboard-latency
+      tool: create_dashboard
+      difficulty: simple
+      args:
+        title: "Perf Test Dashboard"
+      warmup: 1
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: create-iot-dashboard-latency
+      tool: create_iot_dashboard
+      difficulty: moderate
+      args:
+        index_pattern: "metrics-generic.otel-*"
+      warmup: 1
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: create-alert-rule-latency
+      tool: create_alert_rule
+      difficulty: simple
+      args:
+        name: "perf-test-rule"
+        rule_type: threshold
+      warmup: 1
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+- name: performance-agent-builder
+  layer: performance
+  require_env: [ES_URL, KIBANA_URL, KIBANA_API_KEY]
+  tests:
+    - name: list-agent-builder-tools-latency
+      tool: list_agent_builder_tools
+      difficulty: simple
+      args: {}
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: list-agent-builder-agents-latency
+      tool: list_agent_builder_agents
+      difficulty: simple
+      args: {}
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: get-agent-builder-mcp-config-latency
+      tool: get_agent_builder_mcp_config
+      difficulty: simple
+      args: {}
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: create-agent-builder-tool-latency
+      tool: create_agent_builder_tool
+      difficulty: moderate
+      args:
+        id: "perf-test-tool"
+        type: esql
+        description: "Performance test tool"
+        configuration:
+          query: "SHOW INFO"
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: delete-agent-builder-tool-latency
+      tool: delete_agent_builder_tool
+      difficulty: simple
+      args:
+        tool_id: "perf-test-tool"
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: test-agent-builder-tool-latency
+      tool: test_agent_builder_tool
+      difficulty: moderate
+      args:
+        query: "test query"
+        tool_id: "perf-test-tool"
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: create-agent-builder-agent-latency
+      tool: create_agent_builder_agent
+      difficulty: moderate
+      args:
+        id: "perf-test-agent"
+        name: "Perf Test Agent"
+        description: "Performance test agent"
+        instructions: "You are a test agent."
+        tool_ids: ["platform.core.search"]
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: delete-agent-builder-agent-latency
+      tool: delete_agent_builder_agent
+      difficulty: simple
+      args:
+        agent_id: "perf-test-agent"
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+- name: performance-workflow-tools
+  layer: performance
+  tests:
+    - name: list-workflows-latency
+      tool: list_workflows
+      difficulty: simple
+      args: {}
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: run-workflow-latency
+      tool: run_workflow
+      difficulty: moderate
+      args:
+        name: full-o11y-setup
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: save-workflow-latency
+      tool: save_workflow
+      difficulty: moderate
+      args:
+        name: "perf-test-workflow"
+        definition:
+          name: "perf-test-workflow"
+          description: "Workflow for performance testing"
+          steps:
+            - id: "step_1"
+              name: "Check health"
+              tool: "elasticsearch_api"
+              parameters:
+                method: GET
+                path: "/_cluster/health"
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+    - name: deploy-telemetry-dashboard-latency
+      tool: deploy_telemetry_dashboard
+      difficulty: simple
+      args: {}
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+- name: performance-remaining-tools
+  layer: performance
+  require_env: [ES_URL]
+  tests:
+    - name: get-data-summary-latency
+      tool: get_data_summary
+      difficulty: moderate
+      args: {}
+      warmup: 1
+      iterations: 5
+      thresholds:
+        p95: 10000
+
+- name: performance-kibana-api
+  layer: performance
+  require_env: [ES_URL, KIBANA_URL]
+  tests:
+    - name: kibana-api-latency
+      tool: kibana_api
+      difficulty: simple
+      args:
+        method: GET
+        path: /api/status
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000
+
+- name: performance-cloud-api
+  layer: performance
+  require_env: [ELASTIC_CLOUD_API_KEY]
+  tests:
+    - name: cloud-api-latency
+      tool: cloud_api
+      difficulty: simple
+      args:
+        method: GET
+        path: /api/v1/deployments
+      warmup: 2
+      iterations: 10
+      thresholds:
+        p95: 5000

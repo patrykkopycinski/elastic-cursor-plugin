@@ -1,0 +1,481 @@
+- name: integration-gateway-tools
+  layer: integration
+  require_env: [ES_URL]
+  defaults:
+    timeout: 30000
+  tests:
+    - name: es-cluster-health
+      tool: elasticsearch_api
+      difficulty: simple
+      args:
+        method: GET
+        path: /_cluster/health
+      assert:
+        - field: content.0.text
+          op: exists
+        - field: content.0.text
+          op: contains
+          value: "cluster_name"
+
+    - name: es-cat-indices
+      tool: elasticsearch_api
+      difficulty: simple
+      args:
+        method: GET
+        path: /_cat/indices?format=json
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: es-cluster-info
+      tool: elasticsearch_api
+      difficulty: simple
+      args:
+        method: GET
+        path: /
+      assert:
+        - field: content.0.text
+          op: contains
+          value: "version"
+
+    - name: esql-simple-query
+      tool: esql_query
+      difficulty: simple
+      args:
+        query: "SHOW INFO"
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: es-invalid-path-errors
+      tool: elasticsearch_api
+      difficulty: moderate
+      args:
+        method: GET
+        path: /___nonexistent_test_index___/_search
+      expect_error: true
+
+- name: integration-discovery-tools
+  layer: integration
+  require_env: [ES_URL]
+  defaults:
+    timeout: 30000
+  tests:
+    - name: discover-data-basic
+      tool: discover_data
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+        - field: content.0.type
+          op: eq
+          value: text
+
+    - name: discover-o11y-data
+      tool: discover_o11y_data
+      difficulty: moderate
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: discover-security-data
+      tool: discover_security_data
+      difficulty: moderate
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: get-cluster-context
+      tool: get_cluster_context
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: refresh-cluster-knowledge
+      tool: refresh_cluster_knowledge
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: clear-cluster-knowledge
+      tool: clear_cluster_knowledge
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+- name: integration-setup-tools
+  layer: integration
+  tests:
+    - name: get-deployment-guide-cloud
+      tool: get_deployment_guide
+      difficulty: simple
+      args:
+        preference: cloud
+      assert:
+        - field: content.0.text
+          op: contains
+          value: "cloud"
+
+    - name: get-deployment-guide-onprem
+      tool: get_deployment_guide
+      difficulty: simple
+      args:
+        preference: on_prem
+      assert:
+        - field: content.0.text
+          op: contains
+          value: "docker"
+
+    - name: get-connection-config-node
+      tool: get_connection_config
+      difficulty: simple
+      args:
+        url: "https://my-cluster.es.cloud:9243"
+        language: node
+      assert:
+        - field: content.0.text
+          op: contains
+          value: "Client"
+
+    - name: get-connection-config-python
+      tool: get_connection_config
+      difficulty: simple
+      args:
+        url: "https://my-cluster.es.cloud:9243"
+        language: python
+      assert:
+        - field: content.0.text
+          op: contains
+          value: "Elasticsearch"
+
+    - name: setup-apm-express
+      tool: setup_apm
+      difficulty: simple
+      args:
+        framework: express
+      assert:
+        - field: content.0.text
+          op: contains
+          value: "apm"
+
+    - name: setup-apm-python-django
+      tool: setup_apm
+      difficulty: simple
+      args:
+        framework: python-django
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: setup-log-shipping-filebeat
+      tool: setup_log_shipping
+      difficulty: simple
+      args:
+        log_path: "/var/log/app/*.log"
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: siem-quickstart
+      tool: siem_quickstart
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: generate-search-ui-react
+      tool: generate_search_ui
+      difficulty: simple
+      args:
+        framework: react
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: generate-search-ui-vue
+      tool: generate_search_ui
+      difficulty: simple
+      args:
+        framework: vue
+      assert:
+        - field: content.0.text
+          op: exists
+
+- name: integration-security-tools
+  layer: integration
+  require_env: [ES_URL]
+  defaults:
+    timeout: 30000
+  tests:
+    - name: manage-detection-rules-list
+      tool: manage_detection_rules
+      difficulty: simple
+      args:
+        operation: list
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: triage-alerts-list
+      tool: triage_alerts
+      difficulty: simple
+      args:
+        operation: list
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: manage-cases-list
+      tool: manage_cases
+      difficulty: simple
+      args:
+        operation: list
+      assert:
+        - field: content.0.text
+          op: exists
+
+- name: integration-agent-builder-tools
+  layer: integration
+  require_env: [ES_URL, KIBANA_URL, KIBANA_API_KEY]
+  defaults:
+    timeout: 30000
+  tests:
+    - name: list-agent-builder-tools
+      tool: list_agent_builder_tools
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: list-agent-builder-agents
+      tool: list_agent_builder_agents
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: get-agent-builder-mcp-config
+      tool: get_agent_builder_mcp_config
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+- name: integration-workflow-tools
+  layer: integration
+  tests:
+    - name: list-workflows
+      tool: list_workflows
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: run-workflow-full-o11y
+      tool: run_workflow
+      difficulty: moderate
+      args:
+        name: full-o11y-setup
+      assert:
+        - field: content.0.text
+          op: exists
+
+- name: integration-telemetry
+  layer: integration
+  tests:
+    - name: deploy-telemetry-dashboard
+      tool: deploy_telemetry_dashboard
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+        - field: content.0.text
+          op: contains
+          value: "telemetry"
+
+- name: integration-cluster-knowledge
+  layer: integration
+  require_env: [ES_URL]
+  defaults:
+    timeout: 30000
+  tests:
+    - name: get-security-summary
+      tool: get_security_summary
+      difficulty: moderate
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: security-summary-auto-discovery
+      tool: get_security_summary
+      difficulty: moderate
+      args:
+        format: text
+      assert:
+        - field: content.0.text
+          op: exists
+        - field: isError
+          op: neq
+          value: true
+
+    - name: kibana-info
+      tool: kibana_info
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+- name: integration-missing-setup-tools
+  layer: integration
+  require_env: [ES_URL]
+  defaults:
+    timeout: 30000
+  tests:
+    - name: get-data-summary
+      tool: get_data_summary
+      difficulty: simple
+      args: {}
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: create-dashboard
+      tool: create_dashboard
+      difficulty: simple
+      args:
+        title: "Test Dashboard"
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: create-iot-dashboard
+      tool: create_iot_dashboard
+      difficulty: simple
+      args:
+        index_pattern: "metrics-generic.otel-*"
+      expect_error: true
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: create-alert-rule
+      tool: create_alert_rule
+      difficulty: simple
+      args:
+        name: "test-rule"
+        rule_type: "threshold"
+        condition: "count > 10"
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: kibana-api-get-status
+      tool: kibana_api
+      difficulty: simple
+      require_env: [ES_URL, KIBANA_URL]
+      args:
+        method: "GET"
+        path: "/api/status"
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: cloud-api-get-deployments
+      tool: cloud_api
+      difficulty: simple
+      require_env: [ELASTIC_CLOUD_API_KEY]
+      args:
+        method: "GET"
+        path: "/api/v1/deployments"
+      assert:
+        - field: content.0.text
+          op: exists
+
+- name: integration-missing-agent-builder
+  layer: integration
+  require_env: [ES_URL, KIBANA_URL, KIBANA_API_KEY]
+  defaults:
+    timeout: 30000
+  tests:
+    - name: create-agent-builder-tool
+      tool: create_agent_builder_tool
+      difficulty: simple
+      args:
+        name: "test-tool"
+        description: "Test tool"
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: delete-agent-builder-tool-nonexistent
+      tool: delete_agent_builder_tool
+      difficulty: simple
+      args:
+        tool_id: "nonexistent-test"
+      expect_error: true
+
+    - name: test-agent-builder-tool
+      tool: test_agent_builder_tool
+      difficulty: simple
+      args:
+        tool_id: "test"
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: create-agent-builder-agent
+      tool: create_agent_builder_agent
+      difficulty: simple
+      args:
+        name: "test-agent"
+      assert:
+        - field: content.0.text
+          op: exists
+
+    - name: delete-agent-builder-agent-nonexistent
+      tool: delete_agent_builder_agent
+      difficulty: simple
+      args:
+        agent_id: "nonexistent-test"
+      expect_error: true
+
+- name: integration-missing-workflow
+  layer: integration
+  defaults:
+    timeout: 30000
+  tests:
+    - name: save-workflow
+      tool: save_workflow
+      difficulty: simple
+      args:
+        name: "test-workflow"
+        definition:
+          name: "test-workflow"
+          description: "A minimal test workflow"
+          steps:
+            - id: "step_1"
+              name: "Check health"
+              tool: "elasticsearch_api"
+              parameters:
+                method: "GET"
+                path: "/_cluster/health"
+      assert:
+        - field: content.0.text
+          op: exists
