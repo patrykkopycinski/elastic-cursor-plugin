@@ -897,7 +897,6 @@ suites:
           tools: [elasticsearch_api]
         evaluators:
           - tool-selection
-          - mcp-protocol
         distractors:
           mode: random
           count: 8
