@@ -8,7 +8,7 @@
     "seed": "node -e \"fetch('http://localhost:3000/seed', {method:'POST'}).then(r=>r.json()).then(console.log)\""
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^8.17.0",
+    "@elastic/elasticsearch": "^9.0.0",
     "express": "^4.21.0"
   }
 }

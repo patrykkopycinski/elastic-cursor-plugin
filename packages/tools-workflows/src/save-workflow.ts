@@ -58,6 +58,14 @@ export function registerSaveWorkflow(server: ToolRegistrationContext): void {
     },
     async (args) => {
       const { name, definition, save_dir } = args as z.infer<typeof workflowInputSchema>;
+
+      if (save_dir && save_dir.includes('..')) {
+        return {
+          content: [{ type: 'text', text: 'Path traversal patterns ("..") are not allowed in save_dir.' }],
+          isError: true,
+        };
+      }
+
       const targetDir = save_dir ?? join(process.cwd(), 'workflows');
 
       try {

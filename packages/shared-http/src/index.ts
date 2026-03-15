@@ -24,8 +24,8 @@ function getEsUrl(): string | null {
 function getEsAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const apiKey = process.env.ES_API_KEY;
-  const username = process.env.ES_USERNAME;
-  const password = process.env.ES_PASSWORD;
+  const username = process.env.ES_USERNAME ?? process.env.ELASTICSEARCH_USERNAME;
+  const password = process.env.ES_PASSWORD ?? process.env.ELASTICSEARCH_PASSWORD;
 
   if (apiKey) {
     headers.Authorization = `ApiKey ${apiKey}`;
@@ -38,7 +38,7 @@ function getEsAuthHeaders(): Record<string, string> {
 
 export async function esFetch(
   path: string,
-  options: { method?: string; body?: unknown } = {}
+  options: { method?: string; body?: unknown; timeoutMs?: number } = {}
 ): Promise<FetchResult> {
   const base = getEsUrl();
   if (!base) {
@@ -49,10 +49,12 @@ export async function esFetch(
   const headers = getEsAuthHeaders();
 
   try {
+    const signal = AbortSignal.timeout(options.timeoutMs ?? 30_000);
     const res = await fetch(url, {
       method: options.method ?? 'GET',
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
+      signal,
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -70,7 +72,7 @@ export function getKibanaUrl(): string | null {
 
 export async function kibanaFetch(
   path: string,
-  options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}
+  options: { method?: string; body?: unknown; headers?: Record<string, string>; timeoutMs?: number } = {}
 ): Promise<FetchResult> {
   const base = getKibanaUrl();
   if (!base) return { ok: false, error: 'KIBANA_URL not set' };
@@ -90,10 +92,12 @@ export async function kibanaFetch(
   }
   try {
     const url = buildUrl(base, path);
+    const signal = AbortSignal.timeout(options.timeoutMs ?? 30_000);
     const res = await fetch(url, {
       method: options.method ?? 'GET',
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
+      signal,
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: `HTTP ${res.status}: ${JSON.stringify(data)}` };
@@ -127,7 +131,7 @@ export function requireCloudApiKey(): { ok: false; message: string } | { ok: tru
 
 export async function cloudFetch(
   path: string,
-  options: { method?: string; body?: unknown } = {}
+  options: { method?: string; body?: unknown; timeoutMs?: number } = {}
 ): Promise<FetchResult> {
   const auth = requireCloudApiKey();
   if (!auth.ok) return { ok: false, error: auth.message };
@@ -137,16 +141,19 @@ export async function cloudFetch(
     'Content-Type': 'application/json',
   };
   try {
+    const signal = AbortSignal.timeout(options.timeoutMs ?? 30_000);
     const res = await fetch(url, {
       method: options.method ?? 'GET',
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
+      signal,
     });
     const text = await res.text();
     let data: unknown;
     try {
       data = text ? JSON.parse(text) : undefined;
-    } catch {
+    } catch (parseErr) {
+      console.warn(`[shared-http] cloudFetch JSON parse failed: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`);
       data = text;
     }
     if (!res.ok) {

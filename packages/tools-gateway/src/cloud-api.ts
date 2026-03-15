@@ -20,13 +20,18 @@ export function registerCloudApi(server: ToolRegistrationContext): void {
       description:
         'Execute any Elastic Cloud REST API call. Accepts HTTP method, path, and optional JSON body. Returns the raw API response. Read the elastic://docs/api/cloud resource for available endpoints.',
       inputSchema: z.object({
-        method: z.string().describe('HTTP method (GET, POST, PUT, DELETE)'),
+        method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH']).describe('HTTP method'),
         path: z.string().describe('REST API path (e.g. /api/v1/serverless/projects/elasticsearch)'),
         body: z.record(z.unknown()).optional().describe('Optional JSON request body'),
       }),
     },
     async (args) => {
       const { method, path, body } = args as { method: string; path: string; body?: Record<string, unknown> };
+
+      if (path.includes('..')) {
+        return errorResponse('Path traversal patterns ("..") are not allowed in API paths.');
+      }
+
       try {
         const result = await cloudFetch(path, {
           method: method.toUpperCase(),

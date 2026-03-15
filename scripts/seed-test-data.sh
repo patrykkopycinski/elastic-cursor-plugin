@@ -64,7 +64,7 @@ echo ""
 
 # --- Filebeat-style indices (for log shipping discovery) ---
 echo "--- Creating filebeat-* indices ---"
-curl -sf ${AUTH} -X PUT "${ES_URL}/filebeat-8.17.0-2024.01.15" \
+curl -sf ${AUTH} -X PUT "${ES_URL}/filebeat-9.4.0-SNAPSHOT-2024.01.15" \
   -H 'Content-Type: application/json' \
   -d '{
     "settings": {"number_of_shards": 1, "number_of_replicas": 0},
@@ -80,7 +80,7 @@ curl -sf ${AUTH} -X PUT "${ES_URL}/filebeat-8.17.0-2024.01.15" \
   }' || true
 echo ""
 
-curl -sf ${AUTH} -X POST "${ES_URL}/filebeat-8.17.0-2024.01.15/_bulk" \
+curl -sf ${AUTH} -X POST "${ES_URL}/filebeat-9.4.0-SNAPSHOT-2024.01.15/_bulk" \
   -H 'Content-Type: application/x-ndjson' \
   -d '{"index":{}}
 {"@timestamp":"2024-01-15T10:00:00Z","message":"GET /index.html 200 0.004","agent.type":"filebeat","host.name":"webserver-01","log.file.path":"/var/log/nginx/access.log"}
@@ -91,7 +91,7 @@ echo ""
 
 # --- Metricbeat-style indices (for metrics discovery) ---
 echo "--- Creating metricbeat-* indices ---"
-curl -sf ${AUTH} -X PUT "${ES_URL}/metricbeat-8.17.0-2024.01.15" \
+curl -sf ${AUTH} -X PUT "${ES_URL}/metricbeat-9.4.0-SNAPSHOT-2024.01.15" \
   -H 'Content-Type: application/json' \
   -d '{
     "settings": {"number_of_shards": 1, "number_of_replicas": 0},
@@ -107,7 +107,7 @@ curl -sf ${AUTH} -X PUT "${ES_URL}/metricbeat-8.17.0-2024.01.15" \
   }' || true
 echo ""
 
-curl -sf ${AUTH} -X POST "${ES_URL}/metricbeat-8.17.0-2024.01.15/_bulk" \
+curl -sf ${AUTH} -X POST "${ES_URL}/metricbeat-9.4.0-SNAPSHOT-2024.01.15/_bulk" \
   -H 'Content-Type: application/x-ndjson' \
   -d '{"index":{}}
 {"@timestamp":"2024-01-15T10:00:00Z","metricset.name":"cpu","system.cpu.total.pct":0.45,"host.name":"server-01"}
@@ -118,7 +118,7 @@ echo ""
 
 # --- Winlogbeat (for security discovery) ---
 echo "--- Creating winlogbeat-* index ---"
-curl -sf ${AUTH} -X PUT "${ES_URL}/winlogbeat-8.17.0-2024.01.15" \
+curl -sf ${AUTH} -X PUT "${ES_URL}/winlogbeat-9.4.0-SNAPSHOT-2024.01.15" \
   -H 'Content-Type: application/json' \
   -d '{
     "settings": {"number_of_shards": 1, "number_of_replicas": 0},
@@ -135,7 +135,7 @@ curl -sf ${AUTH} -X PUT "${ES_URL}/winlogbeat-8.17.0-2024.01.15" \
   }' || true
 echo ""
 
-curl -sf ${AUTH} -X POST "${ES_URL}/winlogbeat-8.17.0-2024.01.15/_bulk" \
+curl -sf ${AUTH} -X POST "${ES_URL}/winlogbeat-9.4.0-SNAPSHOT-2024.01.15/_bulk" \
   -H 'Content-Type: application/x-ndjson' \
   -d '{"index":{}}
 {"@timestamp":"2024-01-15T10:00:00Z","event.action":"logon-failed","event.category":"authentication","winlog.event_id":4625,"source.ip":"10.0.0.50","user.name":"admin"}
@@ -148,7 +148,7 @@ echo ""
 
 # --- Packetbeat (for network security discovery) ---
 echo "--- Creating packetbeat-* index ---"
-curl -sf ${AUTH} -X PUT "${ES_URL}/packetbeat-8.17.0-2024.01.15" \
+curl -sf ${AUTH} -X PUT "${ES_URL}/packetbeat-9.4.0-SNAPSHOT-2024.01.15" \
   -H 'Content-Type: application/json' \
   -d '{
     "settings": {"number_of_shards": 1, "number_of_replicas": 0},

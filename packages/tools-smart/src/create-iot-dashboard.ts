@@ -16,36 +16,8 @@ import type {
   DiscoveryResult,
   IoTProfile,
   IoTDevice,
-  DataFreshness,
 } from './discovery-types.js';
-
-const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
-
-function computeFreshness(lastDocIso: string | null): DataFreshness {
-  if (!lastDocIso) return { last_document: '', status: 'no_data' };
-  const age = Date.now() - new Date(lastDocIso).getTime();
-  return {
-    last_document: lastDocIso,
-    status: age < STALE_THRESHOLD_MS ? 'active' : 'stale',
-  };
-}
-
-function aggValueAsString(agg: unknown): string | null {
-  if (agg && typeof agg === 'object' && 'value_as_string' in agg) {
-    return (agg as { value_as_string: string }).value_as_string;
-  }
-  if (agg && typeof agg === 'object' && 'value' in agg) {
-    const v = (agg as { value: unknown }).value;
-    return typeof v === 'number' ? new Date(v).toISOString() : null;
-  }
-  return null;
-}
-
-interface EsAggBucket { key: string; doc_count: number;[k: string]: unknown }
-function buckets(aggs: Record<string, unknown>, name: string): EsAggBucket[] {
-  const agg = aggs[name] as { buckets?: EsAggBucket[] } | undefined;
-  return agg?.buckets ?? [];
-}
+import { computeFreshness, aggValueAsString, buckets } from './discovery-utils.js';
 
 async function discoverIoTData(
   indexPattern: string,
@@ -141,7 +113,7 @@ async function discoverIoTData(
 
 function buildDiscoveryResult(profile: IoTProfile): DiscoveryResult {
   return {
-    cluster_info: { name: 'local', version: 'unknown', is_serverless: false },
+    cluster_info: { name: 'local', uuid: null, version: 'unknown', is_serverless: false },
     services: [],
     hosts: [],
     containers: [],
@@ -264,7 +236,7 @@ export function registerCreateIotDashboard(server: ToolRegistrationContext): voi
         JSON.stringify(dashboardConfig, null, 2),
         '```',
         '',
-        '> Pass the above JSON to `kibana_create_dashboard` to create this dashboard in Kibana.',
+        '> Pass the above JSON to `create_dashboard` to create this dashboard in Kibana.',
       ].join('\n');
 
       return { content: [{ type: 'text' as const, text: summary }] };

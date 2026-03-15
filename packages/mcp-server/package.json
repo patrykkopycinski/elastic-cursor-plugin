@@ -16,7 +16,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^8.0.0",
+    "@elastic/elasticsearch": "^9.0.0",
     "@elastic-cursor-plugin/shared-types": "0.1.0",
     "@elastic-cursor-plugin/shared-http": "0.1.0",
     "@elastic-cursor-plugin/knowledge-base": "0.1.0",

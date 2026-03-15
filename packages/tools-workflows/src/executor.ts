@@ -243,7 +243,8 @@ export async function executeWorkflow(
 function tryParseJson(text: string): unknown {
   try {
     return JSON.parse(text);
-  } catch {
+  } catch (err) {
+    console.warn(`[workflow-executor] tryParseJson failed: ${err instanceof Error ? err.message : String(err)}`);
     return text;
   }
 }

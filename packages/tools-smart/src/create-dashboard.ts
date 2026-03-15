@@ -16,7 +16,7 @@ export function registerCreateDashboard(server: ToolRegistrationContext): void {
     {
       title: 'Create Dashboard',
       description:
-        'Generate APM or custom dashboard configuration for a service. Returns saved object JSON or instructions.',
+        'Generate dashboard setup instructions for a service. Returns markdown text with panel configurations, visualization suggestions, and Kibana saved object examples — not a live dashboard. For IoT-specific dashboards with full JSON configs, use create_iot_dashboard.',
       inputSchema: z.object({
         title: z.string().describe('Dashboard title'),
         service_name: z.string().optional().describe('APM service name for APM dashboard'),

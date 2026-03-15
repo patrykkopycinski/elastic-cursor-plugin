@@ -51,7 +51,7 @@ jobs:
     needs: static-unit
     services:
       elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.4.0-SNAPSHOT
         ports:
           - 9200:9200
         env:
@@ -98,7 +98,7 @@ jobs:
     needs: integration
     services:
       elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.4.0-SNAPSHOT
         ports:
           - 9200:9200
         env:
@@ -146,7 +146,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     services:
       elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.4.0-SNAPSHOT
         ports:
           - 9200:9200
         env:

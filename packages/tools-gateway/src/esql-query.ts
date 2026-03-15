@@ -17,9 +17,9 @@ export function registerEsqlQuery(server: ToolRegistrationContext, client: Clien
     'esql_query',
     {
       title: 'ES|QL Query',
-      description: 'Execute an ES|QL query and return results in tabular form.',
+      description: 'Execute an ES|QL query and return results in tabular (tab-separated) form. Use for data exploration, aggregations, and pipeline queries. For raw REST API access, use elasticsearch_api instead. Example: FROM logs-* | STATS count=COUNT() BY log.level | SORT count DESC',
       inputSchema: z.object({
-        query: z.string().describe('ES|QL query string (e.g. FROM index | LIMIT 10)'),
+        query: z.string().min(1).describe('ES|QL query string (e.g. FROM index | LIMIT 10)'),
       }),
     },
     async (args) => {

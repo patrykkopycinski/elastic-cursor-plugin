@@ -20,7 +20,7 @@ export function registerElasticsearchApi(server: ToolRegistrationContext, client
       description:
         'Execute any Elasticsearch REST API call. Accepts HTTP method, path (including query params), and optional JSON body. Returns the raw API response. Read the elastic://docs/api/elasticsearch resource for available endpoints.',
       inputSchema: z.object({
-        method: z.string().describe('HTTP method (GET, POST, PUT, DELETE, HEAD)'),
+        method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH']).describe('HTTP method'),
         path: z
           .string()
           .describe('REST API path including query parameters (e.g. /_cat/indices?v=true&format=json)'),

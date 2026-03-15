@@ -16,7 +16,7 @@ export function registerSiemQuickstart(server: ToolRegistrationContext): void {
     {
       title: 'SIEM Quickstart',
       description:
-        'One-shot SIEM setup: recommended detection rules and dashboard. Returns steps and links.',
+        'Return a static SIEM setup guide with recommended detection rules, prebuilt rule activation steps, and dashboard links. Does NOT configure anything live — use manage_detection_rules to actually manage rules, or triage_alerts to work with alerts.',
       inputSchema: z.object({}),
     },
     async () => {

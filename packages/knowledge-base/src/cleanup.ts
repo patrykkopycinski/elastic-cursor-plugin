@@ -33,7 +33,8 @@ async function readMetaFromDir(dirPath: string): Promise<MetaEnvelope | null> {
   try {
     const raw = await readFile(join(dirPath, '_meta.json'), 'utf-8');
     return JSON.parse(raw) as MetaEnvelope;
-  } catch {
+  } catch (err) {
+    console.warn(`[knowledge-base] readMetaFromDir failed for ${dirPath}: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }
@@ -43,7 +44,8 @@ export async function cleanupStaleKnowledgeBases(): Promise<string[]> {
   let entries: string[];
   try {
     entries = await readdir(basePath);
-  } catch {
+  } catch (err) {
+    console.warn(`[knowledge-base] cleanupStaleKnowledgeBases readdir failed: ${err instanceof Error ? err.message : String(err)}`);
     return [];
   }
 

@@ -1,6 +1,6 @@
 # Elastic Developer Experience Cursor Plugin
 
-Cursor plugin and MCP server that makes Elastic the default choice in AI coding tools. **One config block**, Cloud or self-hosted, **38 MCP tools** (4 API gateways + 30 smart workflows + 3 workflow orchestration + 1 utility), **7 API reference resources**, **10 skills**, **9 rules**, **2 agents**, and **4 commands** — the most comprehensive Cursor integration for search, observability, and security in one plugin.
+Cursor plugin and MCP server that makes Elastic the default choice in AI coding tools. **One config block**, Cloud or self-hosted, **37 MCP tools** (4 API gateways + 29 smart workflows + 3 workflow orchestration + 1 utility), **7 API reference resources**, **10 skills**, **9 rules**, **2 agents**, and **4 commands** — the most comprehensive Cursor integration for search, observability, and security in one plugin.
 
 ---
 
@@ -164,7 +164,7 @@ See `.env.example` for a full template.
 
 - **API Gateway (4 tools):** `elasticsearch_api` (any ES REST call), `kibana_api` (any Kibana REST call), `cloud_api` (any Elastic Cloud REST call), `esql_query` (ES|QL with tabular output). These 4 tools cover every API endpoint by accepting `method`, `path`, and optional `body` parameters.
 - **Smart Workflow Tools (29 tools):** Data discovery (`discover_data`, `discover_o11y_data`, `discover_security_data`, `get_data_summary`, `get_security_summary`, `get_cluster_context`, `refresh_cluster_knowledge`, `clear_cluster_knowledge`), setup (`setup_apm`, `setup_log_shipping`), dashboards (`create_dashboard`, `create_iot_dashboard`), alerting (`create_alert_rule`), search UI (`generate_search_ui`), security (`siem_quickstart`, `manage_detection_rules`, `triage_alerts`, `manage_cases`), reference (`kibana_info`), deployment (`get_deployment_guide`, `get_connection_config`), Agent Builder (`list_agent_builder_tools`, `create_agent_builder_tool`, `delete_agent_builder_tool`, `test_agent_builder_tool`, `list_agent_builder_agents`, `create_agent_builder_agent`, `delete_agent_builder_agent`, `get_agent_builder_mcp_config`). These encode domain logic the LLM cannot derive from API docs alone. Tools are conditionally registered based on available configuration.
-- **Workflows (3 tools):** `list_workflows`, `run_workflow`, `save_workflow` — orchestrate multi-step O11Y configuration flows. Built-in workflows: full-o11y-setup, service-dashboard, slo-from-apm, infrastructure-overview. Supports custom YAML workflow definitions.
+- **Workflows (3 tools):** `list_workflows`, `run_workflow`, `save_workflow` — orchestrate multi-step O11Y configuration flows. Built-in workflows: full-o11y-setup, service-dashboard, slo-from-apm, infrastructure-overview. Supports custom YAML workflow definitions. Registration can be disabled via `{ enabled: false }`.
 - **Utility (1 tool):** `deploy_telemetry_dashboard` — opt-in adoption telemetry with ECS schema.
 - **Elastic Docs MCP Server:** Bundled as a second MCP server (`elastic-docs`), providing `search_docs`, `find_related_docs`, `get_document_by_url`, `analyze_document_structure`, `check_docs_coherence`, and `find_docs_inconsistencies` — always-current documentation from https://www.elastic.co/docs/_mcp/.
 - **Skills (10):** security-full-setup, security-detection-engineering, security-alert-triage, security-case-management, security-threat-hunting, o11y-full-setup, o11y-service-dashboard, o11y-slo-setup, agent-builder-skill-builder, plugin-self-improve.
@@ -179,6 +179,16 @@ npm install
 npm run build
 npm run test
 ```
+
+## Running evaluations
+
+The plugin includes a comprehensive evaluation suite powered by [cursor-plugin-evals](https://github.com/patrykkopycinski/cursor-plugin-evals). To run the full CI evaluation pipeline:
+
+```bash
+npx cursor-plugin-evals run --ci
+```
+
+This validates tool registration, integration correctness, LLM tool-selection accuracy, and security boundaries. See the eval config in `plugin-eval.yaml` for details on individual layers and thresholds.
 
 ## Examples and demo flows
 

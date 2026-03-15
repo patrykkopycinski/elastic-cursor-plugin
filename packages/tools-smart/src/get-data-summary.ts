@@ -409,7 +409,7 @@ function buildTextSummary(
       lines.push(`- **${rec.template}**: ${rec.description} (${rec.config.panels.length} panels)`);
     }
     lines.push('');
-    lines.push('> Use `kibana_create_dashboard` with the recommended panel configurations to create these dashboards.');
+    lines.push('> Use `create_dashboard` with the recommended panel configurations to create these dashboards.');
   }
   lines.push('');
 
@@ -421,7 +421,7 @@ function buildTextSummary(
       lines.push(`- **${rec.name}**: ${rec.description}`);
     }
     lines.push('');
-    lines.push('> Use `create_slo` with the recommended configurations to create these SLOs.');
+    lines.push('> Use `kibana_api` with POST /api/observability/slos and the recommended configurations to create these SLOs.');
   }
   lines.push('');
 
@@ -513,6 +513,7 @@ export function registerGetDataSummary(server: ToolRegistrationContext): void {
           data = {
             cluster_info: {
               name: (d.cluster_name as string) ?? 'unknown',
+              uuid: (d.cluster_uuid as string) ?? null,
               version: (version?.number as string) ?? 'unknown',
               is_serverless: buildFlavor === 'serverless',
             },

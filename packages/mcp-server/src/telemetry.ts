@@ -29,6 +29,7 @@ interface TelemetryEvent {
 const queue: TelemetryEvent[] = [];
 const BATCH_SIZE = 10;
 const FLUSH_MS = 5000;
+const MAX_QUEUE_SIZE = 10000;
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 
 function getTimestamp(): string {
@@ -96,6 +97,11 @@ async function flush(): Promise<void> {
   } catch (err) {
     console.warn(`[telemetry] Failed to flush telemetry batch: ${err instanceof Error ? err.message : String(err)}`);
     queue.push(...batch);
+    if (queue.length > MAX_QUEUE_SIZE) {
+      const overflow = queue.length - MAX_QUEUE_SIZE;
+      queue.splice(0, overflow);
+      console.warn(`[telemetry] Queue overflow: dropped ${overflow} oldest events`);
+    }
   }
   if (queue.length === 0 && flushTimer) {
     clearInterval(flushTimer);

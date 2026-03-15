@@ -7,7 +7,7 @@ Get Elastic search and tools in Cursor in **3 steps**. Choose **Cloud** (no serv
 ## Prerequisites
 
 - **Node.js 20+** — check with `node -v`
-- **Cloud path:** [Elastic Cloud](https://cloud.elastic.co) account (free trial) and an API key, or a deployment URL + API key  
+- **Cloud path:** [Elastic Cloud](https://cloud.elastic.co) account (free trial) and an API key, or a deployment URL + API key
 - **On-prem path:** Docker and Docker Compose
 
 ---
@@ -19,7 +19,7 @@ Get Elastic search and tools in Cursor in **3 steps**. Choose **Cloud** (no serv
 - Sign up at [cloud.elastic.co](https://cloud.elastic.co) and create a deployment, **or**
 - Use the plugin: in Cursor, ask *"Set up Elastic for me"* → choose Cloud → the AI will use `create_cloud_project` (needs `ELASTIC_CLOUD_API_KEY` in MCP env) and give you a connection snippet.
 
-Copy your **Elasticsearch URL** and **API key** (from the Cloud console or from the AI’s response).
+Copy your **Elasticsearch URL** and **API key** (from the Cloud console or from the AI's response).
 
 **On-prem:**
 
@@ -31,7 +31,31 @@ Copy your **Elasticsearch URL** and **API key** (from the Cloud console or from 
 ## Step 2: Add the MCP server in Cursor
 
 1. Open **Cursor → Settings → MCP** (or your MCP config file).
-2. Add this server (replace placeholders with your values):
+2. Add this server.
+
+**Option A — `.env` file (recommended):**
+
+Create a `.env` file in the repo root with your credentials:
+
+```bash
+ES_URL=https://your-deployment.es.us-central1.gcp.cloud.es.io:9243
+ES_API_KEY=your_base64_api_key
+```
+
+The plugin's `mcp.json` already uses `envFile: ".env"` — Cursor will load it automatically. No secrets in the MCP config.
+
+**Option B — Shell environment variables:**
+
+Export credentials in your shell profile (`~/.zshrc`, `~/.bashrc`):
+
+```bash
+export ES_URL="https://your-deployment.es.us-central1.gcp.cloud.es.io:9243"
+export ES_API_KEY="your_base64_api_key"
+```
+
+The plugin's `mcp.json` uses `${env:ES_URL}` interpolation — Cursor resolves these from your shell environment.
+
+**Option C — Hardcoded (quick & dirty):**
 
 ```json
 {
@@ -49,11 +73,84 @@ Copy your **Elasticsearch URL** and **API key** (from the Cloud console or from 
 }
 ```
 
-- **`cwd`**: Path to this repo (where you cloned `elastic-cursor-plugin`).
-- **`ES_URL`**: Your Elasticsearch URL (Cloud or `http://localhost:9200` for Docker).
-- **`ES_API_KEY`**: Your API key, or use `ES_USERNAME` and `ES_PASSWORD` for basic auth.
+> **Warning**: Avoid this for production credentials — secrets are stored in plaintext JSON.
 
 **From repo:** Run `npm install && npm run build` in the repo first so `packages/mcp-server/dist/index.js` exists.
+
+---
+
+## Securing credentials
+
+### 1Password CLI (recommended for teams)
+
+Store secrets in a 1Password vault and inject them at runtime. Secrets exist only in memory — never on disk.
+
+Create `.env.1password` (safe to commit — contains references, not values):
+
+```bash
+ES_URL=op://Development/elastic-cloud/url
+ES_API_KEY=op://Development/elastic-cloud/api-key
+ELASTIC_CLOUD_API_KEY=op://Development/elastic-cloud/cloud-api-key
+```
+
+Configure Cursor to launch via 1Password:
+
+```json
+{
+  "mcpServers": {
+    "elastic": {
+      "command": "op",
+      "args": [
+        "run", "--env-file=.env.1password", "--",
+        "node", "packages/mcp-server/dist/index.js"
+      ],
+      "cwd": "/path/to/elastic-cursor-plugin"
+    }
+  }
+}
+```
+
+### macOS Keychain
+
+Store credentials in the native keychain and resolve at launch:
+
+```bash
+# Store once
+security add-generic-password -s elastic-es-url -a elastic -w "https://your-url:9243"
+security add-generic-password -s elastic-api-key -a elastic -w "your_api_key"
+```
+
+```json
+{
+  "mcpServers": {
+    "elastic": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "ES_URL=$(security find-generic-password -s elastic-es-url -w) ES_API_KEY=$(security find-generic-password -s elastic-api-key -w) exec node packages/mcp-server/dist/index.js"
+      ],
+      "cwd": "/path/to/elastic-cursor-plugin"
+    }
+  }
+}
+```
+
+### Credential file with restricted permissions
+
+Create `~/.elastic-credentials` (chmod 600) and reference via `envFile`:
+
+```json
+{
+  "mcpServers": {
+    "elastic": {
+      "command": "node",
+      "args": ["packages/mcp-server/dist/index.js"],
+      "cwd": "/path/to/elastic-cursor-plugin",
+      "envFile": "${userHome}/.elastic-credentials"
+    }
+  }
+}
+```
 
 ---
 
@@ -68,15 +165,20 @@ Restart Cursor (or reload MCP). The **elastic** tools and skills will appear. In
 
 ---
 
-## One-config summary
+## Environment variable reference
 
-| You have              | Use this in MCP config                                      |
-|-----------------------|-------------------------------------------------------------|
-| Cloud URL + API key   | `ES_URL` + `ES_API_KEY` in `env`                           |
-| On-prem Docker        | `ES_URL=http://localhost:9200` + `ES_USERNAME`/`ES_PASSWORD` |
-| Cloud + create project| Set `ELASTIC_CLOUD_API_KEY` in `env`; AI can run `create_cloud_project` |
-
-Same single config block above; only the `env` values change. No extra setup.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ES_URL` | Yes (or `ES_CLOUD_ID`) | Elasticsearch endpoint URL |
+| `ES_API_KEY` | Recommended | Base64 API key for authentication |
+| `ES_USERNAME` | Alt auth | Username for basic auth (usually `elastic`) |
+| `ES_PASSWORD` | Alt auth | Password for basic auth |
+| `ES_CLOUD_ID` | Alt | Elastic Cloud deployment ID |
+| `KIBANA_URL` | For dashboards/SLOs | Kibana endpoint URL |
+| `KIBANA_API_KEY` | For dashboards/SLOs | Kibana API key |
+| `ELASTIC_CLOUD_API_KEY` | For provisioning | Elastic Cloud management API key |
+| `ES_SSL_SKIP_VERIFY` | Dev only | Set `true` to skip TLS verification |
+| `ES_CLUSTERS` | Multi-cluster | JSON: `{"name": {"url": "...", "apiKey": "..."}}` |
 
 ---
 
@@ -107,15 +209,11 @@ The agent will:
 
 ### Requirements for O11Y tools
 
-Add `KIBANA_URL` and `KIBANA_API_KEY` to your MCP config env to enable dashboard and SLO creation:
+Add `KIBANA_URL` and `KIBANA_API_KEY` to your `.env` file (or MCP config env) to enable dashboard and SLO creation:
 
-```json
-{
-  "env": {
-    "ES_URL": "...",
-    "ES_API_KEY": "...",
-    "KIBANA_URL": "https://your-kibana-url:5601",
-    "KIBANA_API_KEY": "your-kibana-api-key"
-  }
-}
+```bash
+ES_URL=...
+ES_API_KEY=...
+KIBANA_URL=https://your-kibana-url:5601
+KIBANA_API_KEY=your-kibana-api-key
 ```

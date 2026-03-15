@@ -30,7 +30,14 @@ export { listWorkflows, getWorkflow, saveWorkflow } from './registry.js';
 export { builtInWorkflows } from './built-in-workflows.js';
 export { workflowSchema } from './schema.js';
 
-export function registerAll(server: ToolRegistrationContext): void {
+export interface WorkflowToolsOptions {
+  enabled?: boolean;
+}
+
+export function registerAll(server: ToolRegistrationContext, options: WorkflowToolsOptions = {}): void {
+  if (options.enabled === false) {
+    return;
+  }
   registerListWorkflows(server);
   registerRunWorkflow(server);
   registerSaveWorkflow(server);

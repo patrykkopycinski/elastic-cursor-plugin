@@ -20,13 +20,18 @@ export function registerKibanaApi(server: ToolRegistrationContext): void {
       description:
         'Execute any Kibana REST API call. Accepts HTTP method, path (including query params), and optional JSON body. Returns the raw API response. Read the elastic://docs/api/kibana resource for available endpoints.',
       inputSchema: z.object({
-        method: z.string().describe('HTTP method (GET, POST, PUT, DELETE)'),
+        method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH']).describe('HTTP method'),
         path: z.string().describe('REST API path (e.g. /api/saved_objects/_find?type=dashboard)'),
         body: z.record(z.unknown()).optional().describe('Optional JSON request body'),
       }),
     },
     async (args) => {
       const { method, path, body } = args as { method: string; path: string; body?: Record<string, unknown> };
+
+      if (path.includes('..')) {
+        return errorResponse('Path traversal patterns ("..") are not allowed in API paths.');
+      }
+
       const isInternal = path.startsWith('/internal/');
       try {
         const result = await kibanaFetch(path, {

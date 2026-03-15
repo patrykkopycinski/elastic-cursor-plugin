@@ -19,6 +19,8 @@ import {
   type CategoryName,
 } from '@elastic-cursor-plugin/knowledge-base';
 import type { CacheStatus } from '@elastic-cursor-plugin/knowledge-base';
+import { runO11yDiscovery } from './discover-o11y-data.js';
+import { runSecurityDiscovery } from './discover-security-data.js';
 
 const ALL_SECTIONS: CategoryName[] = [
   '_meta', 'indices', 'data-streams', 'templates', 'pipelines', 'lifecycle', 'o11y', 'security',
@@ -137,6 +139,98 @@ async function autoPopulateBasicKnowledge(clusterUuid: string): Promise<void> {
   }
 }
 
+async function refreshSections(clusterUuid: string, sections: CategoryName[]): Promise<void> {
+  const tasks: Promise<void>[] = [];
+
+  const needsIndices = sections.includes('indices') || sections.includes('data-streams');
+  if (needsIndices) {
+    tasks.push(
+      esFetch('/_resolve/index/*?expand_wildcards=open').then(async (res) => {
+        if (!res.ok) return;
+        const data = res.data as { indices?: Array<{ name: string }>; data_streams?: Array<{ name: string }> };
+        await Promise.all([
+          writeCategory(clusterUuid, 'indices', data.indices ?? []),
+          writeCategory(clusterUuid, 'data-streams', data.data_streams ?? []),
+        ]);
+      })
+    );
+  }
+
+  if (sections.includes('_meta')) {
+    tasks.push(
+      esFetch('/').then(async (res) => {
+        if (!res.ok) return;
+        const d = res.data as Record<string, unknown>;
+        const version = d.version as Record<string, unknown> | undefined;
+        await writeCategory(clusterUuid, '_meta', {
+          name: (d.cluster_name as string) ?? 'unknown',
+          version: (version?.number as string) ?? 'unknown',
+          lastAccessed: new Date().toISOString(),
+        });
+      })
+    );
+  }
+
+  if (sections.includes('templates')) {
+    tasks.push(
+      Promise.all([esFetch('/_index_template/*'), esFetch('/_component_template/*')]).then(async ([indexRes, compRes]) => {
+        if (!indexRes.ok || !compRes.ok) return;
+        await writeCategory(clusterUuid, 'templates', {
+          index_templates: (indexRes.data as { index_templates?: unknown[] }).index_templates ?? [],
+          component_templates: (compRes.data as { component_templates?: unknown[] }).component_templates ?? [],
+        });
+      })
+    );
+  }
+
+  if (sections.includes('pipelines')) {
+    tasks.push(
+      esFetch('/_ingest/pipeline').then(async (res) => {
+        if (res.ok) await writeCategory(clusterUuid, 'pipelines', res.data);
+      })
+    );
+  }
+
+  if (sections.includes('lifecycle')) {
+    tasks.push(
+      esFetch('/_ilm/policy').then(async (res) => {
+        await writeCategory(clusterUuid, 'lifecycle', res.ok ? res.data : []);
+      })
+    );
+  }
+
+  if (sections.includes('o11y')) {
+    tasks.push(
+      runO11yDiscovery().then(async (result) => {
+        if (!result) return;
+        const { services, hosts, containers, logSources, iotProfiles } = result;
+        await writeCategory(clusterUuid, 'o11y', {
+          services, hosts, containers, log_sources: logSources, iot_profiles: iotProfiles,
+        });
+      }).catch((err) => {
+        console.warn(`[get-cluster-context] force_refresh o11y failed: ${err instanceof Error ? err.message : String(err)}`);
+      })
+    );
+  }
+
+  if (sections.includes('security')) {
+    tasks.push(
+      runSecurityDiscovery().then(async (result) => {
+        if (!result) return;
+        await writeCategory(clusterUuid, 'security', {
+          data_sources: result.dataSources,
+          rule_coverage: result.ruleCoverage,
+          alert_summary: result.alertSummary,
+        });
+      }).catch((err) => {
+        console.warn(`[get-cluster-context] force_refresh security failed: ${err instanceof Error ? err.message : String(err)}`);
+      })
+    );
+  }
+
+  await Promise.allSettled(tasks);
+}
+
 export function registerGetClusterContext(server: ToolRegistrationContext): void {
   server.registerTool(
     'get_cluster_context',
@@ -166,6 +260,10 @@ export function registerGetClusterContext(server: ToolRegistrationContext): void
       const requestedSections = input.sections?.length
         ? ALL_SECTIONS.filter((s) => input.sections!.includes(s))
         : ALL_SECTIONS;
+
+      if (input.force_refresh) {
+        await refreshSections(clusterUuid, requestedSections);
+      }
 
       const statuses = new Map<CategoryName, { status: CacheStatus; updatedAt: string | null }>();
       for (const section of requestedSections) {

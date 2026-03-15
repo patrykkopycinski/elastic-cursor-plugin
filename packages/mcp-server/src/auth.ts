@@ -8,7 +8,7 @@
  */
 
 import { Client } from '@elastic/elasticsearch';
-import type { ClustersConfig, EsConnectionConfig } from './types.js';
+import type { ClustersConfig } from './types.js';
 
 const SKIP_VERIFY = process.env.ES_SSL_SKIP_VERIFY === 'true';
 
@@ -20,8 +20,8 @@ export function createClientFromEnv(): Client | null {
   const url = process.env.ES_URL;
   const cloudId = process.env.ES_CLOUD_ID;
   const apiKey = process.env.ES_API_KEY;
-  const username = process.env.ES_USERNAME;
-  const password = process.env.ES_PASSWORD;
+  const username = process.env.ES_USERNAME ?? process.env.ELASTICSEARCH_USERNAME;
+  const password = process.env.ES_PASSWORD ?? process.env.ELASTICSEARCH_PASSWORD;
 
   if (cloudId && apiKey) {
     return new Client({
@@ -76,7 +76,8 @@ export function getClustersFromEnv(): ClustersConfig | null {
       }
     }
     return Object.keys(result).length ? result : null;
-  } catch {
+  } catch (err) {
+    console.warn(`[mcp-server] getClustersFromEnv JSON parse failed: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }
@@ -104,26 +105,4 @@ export function getDefaultClient(): Client | null {
         : undefined,
     tls: SKIP_VERIFY ? { rejectUnauthorized: false } : undefined,
   });
-}
-
-/**
- * Get a client for a named cluster (from ES_CLUSTERS). Falls back to default client if name is missing or not found.
- */
-export function getClientForCluster(clusterName?: string | null): Client | null {
-  if (clusterName) {
-    const clusters = getClustersFromEnv();
-    const config = clusters?.[clusterName];
-    if (config) {
-      return new Client({
-        node: config.url,
-        auth: config.apiKey
-          ? { apiKey: config.apiKey }
-          : config.username && config.password
-            ? { username: config.username!, password: config.password }
-            : undefined,
-        tls: SKIP_VERIFY ? { rejectUnauthorized: false } : undefined,
-      });
-    }
-  }
-  return getDefaultClient();
 }

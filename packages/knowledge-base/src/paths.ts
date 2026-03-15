@@ -46,7 +46,9 @@ export async function ensureDir(dirPath: string): Promise<boolean> {
   try {
     await mkdir(dirPath, { recursive: true, mode: DIR_MODE });
     // Re-apply in case the directory already existed with looser permissions
-    await chmod(dirPath, DIR_MODE).catch(() => { });
+    await chmod(dirPath, DIR_MODE).catch((err) => {
+      console.warn(`[knowledge-base] Failed to chmod directory ${dirPath}: ${err instanceof Error ? err.message : String(err)}`);
+    });
     return true;
   } catch (err) {
     console.warn(`[knowledge-base] Failed to ensure directory ${dirPath}: ${err instanceof Error ? err.message : String(err)}`);
@@ -58,7 +60,8 @@ export async function isWritable(dirPath: string): Promise<boolean> {
   try {
     await access(dirPath, constants.W_OK);
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[knowledge-base] isWritable check failed for ${dirPath}: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 }

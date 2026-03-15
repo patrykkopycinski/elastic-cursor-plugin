@@ -35,7 +35,7 @@ const inputSchema = z.discriminatedUnion('operation', [
     severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
     tags: z.array(z.string()).optional().describe('Filter by tags'),
     page: z.number().optional(),
-    per_page: z.number().optional(),
+    per_page: z.number().min(1).max(100).optional(),
   }),
   z.object({
     operation: z.literal('get'),

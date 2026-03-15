@@ -10,12 +10,14 @@
 import { z } from 'zod';
 import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
 import { textResponse } from '@elastic-cursor-plugin/shared-types';
+import { esFetch } from '@elastic-cursor-plugin/shared-http';
 import type {
   SecurityDiscoveryResult,
   RuleCoverage,
   AlertSummary,
 } from './security-discovery-types.js';
 import { MITRE_TACTICS } from './security-discovery-types.js';
+import { runSecurityDiscovery } from './discover-security-data.js';
 
 function assessOverallHealth(result: SecurityDiscoveryResult): string {
   const activeSources = result.data_sources.filter((ds) => ds.freshness.status === 'active').length;
@@ -203,31 +205,70 @@ export function registerGetSecuritySummary(server: ToolRegistrationContext): voi
     {
       title: 'Get Security Summary',
       description:
-        'Generate a security posture summary with coverage gaps, MITRE ATT&CK matrix, alert trends, and recommended actions. Uses discover_security_data results (live or cached).',
+        'Generate a security posture summary with coverage gaps, MITRE ATT&CK matrix, alert trends, and recommended actions. Automatically discovers security data if no discovery_data is provided.',
       inputSchema: z.object({
         sections: z
           .array(z.string())
           .optional()
           .describe('Sections to include: gaps, mitre, recommendations. Defaults to all.'),
         discovery_data: z
-          .unknown()
+          .record(z.unknown())
           .optional()
-          .describe('Pre-computed SecurityDiscoveryResult to summarize (avoids re-running discovery)'),
+          .describe('Optional: pre-computed JSON output from discover_security_data. If omitted, discovery runs automatically.'),
       }),
     },
     async (args: unknown) => {
       const input = args as {
         sections?: string[];
-        discovery_data?: SecurityDiscoveryResult;
+        discovery_data?: Record<string, unknown>;
       };
 
-      if (input.discovery_data) {
-        return textResponse(formatSummaryMarkdown(input.discovery_data, input.sections));
-      }
+      try {
+        let result: SecurityDiscoveryResult;
 
-      return textResponse(
-        'No discovery data provided. Run `discover_security_data` first, then pass the result as `discovery_data`, or use `get_cluster_context` for cached results.'
-      );
+        if (input.discovery_data && input.discovery_data.cluster_info && Array.isArray(input.discovery_data.data_sources)) {
+          result = input.discovery_data as unknown as SecurityDiscoveryResult;
+        } else {
+          const clusterRes = await esFetch('/');
+          if (!clusterRes.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to connect to Elasticsearch: ${clusterRes.error ?? 'unknown error'}` }],
+              isError: true,
+            };
+          }
+
+          const d = clusterRes.data as Record<string, unknown>;
+          const version = d.version as Record<string, unknown> | undefined;
+
+          const discovered = await runSecurityDiscovery();
+          if (!discovered) {
+            return {
+              content: [{ type: 'text', text: 'Failed to run security discovery.' }],
+              isError: true,
+            };
+          }
+
+          result = {
+            cluster_info: {
+              name: (d.cluster_name as string) ?? 'unknown',
+              version: (version?.number as string) ?? 'unknown',
+              uuid: (d.cluster_uuid as string) ?? 'unknown',
+            },
+            data_sources: discovered.dataSources,
+            rule_coverage: discovered.ruleCoverage,
+            alert_summary: discovered.alertSummary,
+            discovery_time_ms: 0,
+          };
+        }
+
+        return textResponse(formatSummaryMarkdown(result, input.sections));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: 'text', text: `Failed to generate security summary: ${message}` }],
+          isError: true,
+        };
+      }
     }
   );
 }

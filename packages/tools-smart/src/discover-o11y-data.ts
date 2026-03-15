@@ -9,6 +9,7 @@
 
 import { z } from 'zod';
 import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-types';
+import { textResponse, errorResponse } from '@elastic-cursor-plugin/shared-types';
 import { esFetch } from '@elastic-cursor-plugin/shared-http';
 import { writeCategory } from '@elastic-cursor-plugin/knowledge-base';
 import type {
@@ -25,48 +26,10 @@ import type {
   IoTProfile,
   IoTDevice,
 } from './discovery-types.js';
+import { computeFreshness, aggValueAsString, buckets } from './discovery-utils.js';
 
 const DEFAULT_TIME_RANGE_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_MAX_INDICES = 50;
-const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
-
-interface EsAggBucket {
-  key: string;
-  doc_count: number;
-  [k: string]: unknown;
-}
-
-function computeFreshness(lastDocIso: string | null): DataFreshness {
-  if (!lastDocIso) {
-    return { last_document: '', status: 'no_data' };
-  }
-  const age = Date.now() - new Date(lastDocIso).getTime();
-  return {
-    last_document: lastDocIso,
-    status: age < STALE_THRESHOLD_MS ? 'active' : 'stale',
-  };
-}
-
-
-function buckets(aggs: Record<string, unknown>, name: string): EsAggBucket[] {
-  const agg = aggs[name] as { buckets?: EsAggBucket[] } | undefined;
-  return agg?.buckets ?? [];
-}
-
-function aggValue(agg: unknown): unknown {
-  if (agg && typeof agg === 'object' && 'value' in agg) {
-    return (agg as { value: unknown }).value;
-  }
-  return null;
-}
-
-function aggValueAsString(agg: unknown): string | null {
-  if (agg && typeof agg === 'object' && 'value_as_string' in agg) {
-    return (agg as { value_as_string: string }).value_as_string;
-  }
-  const v = aggValue(agg);
-  return typeof v === 'number' ? new Date(v).toISOString() : null;
-}
 
 async function fetchClusterInfo(): Promise<{ ok: true; info: ClusterInfo } | { ok: false; error: string }> {
   const res = await esFetch('/');
@@ -80,16 +43,11 @@ async function fetchClusterInfo(): Promise<{ ok: true; info: ClusterInfo } | { o
     ok: true,
     info: {
       name: (d.cluster_name as string) ?? 'unknown',
+      uuid: (d.cluster_uuid as string) ?? null,
       version: (version?.number as string) ?? 'unknown',
       is_serverless: buildFlavor === 'serverless',
     },
   };
-}
-
-async function getClusterUuid(): Promise<string | null> {
-  const res = await esFetch('/');
-  if (!res.ok) return null;
-  return (res.data as Record<string, unknown>).cluster_uuid as string ?? null;
 }
 
 async function discoverApmServices(
@@ -419,26 +377,15 @@ async function discoverIoTProfiles(from: string, to: string): Promise<IoTProfile
   ];
 }
 
-async function discoverDataStreams(maxIndices: number): Promise<DataStreamInfo[]> {
-  const res = await esFetch('/_resolve/index/*?expand_wildcards=open');
-  if (!res.ok) return [];
+async function profileDataStream(name: string): Promise<DataStreamInfo> {
+  let dsType: DataStreamInfo['type'] = 'other';
+  if (name.startsWith('traces-')) dsType = 'traces';
+  else if (name.startsWith('metrics-')) dsType = 'metrics';
+  else if (name.startsWith('logs-')) dsType = 'logs';
 
-  const data = res.data as { data_streams?: Array<{ name: string }> };
-  const streams = (data.data_streams ?? []).slice(0, maxIndices);
-
-  const results: DataStreamInfo[] = [];
-
-  for (const stream of streams) {
-    const { name } = stream;
-    let dsType: DataStreamInfo['type'] = 'other';
-    if (name.startsWith('traces-')) dsType = 'traces';
-    else if (name.startsWith('metrics-')) dsType = 'metrics';
-    else if (name.startsWith('logs-')) dsType = 'logs';
-
-    const countRes = await esFetch(`/${name}/_count?ignore_unavailable=true`);
-    const docCount = countRes.ok ? ((countRes.data as { count?: number })?.count ?? 0) : 0;
-
-    const tsRes = await esFetch(`/${name}/_search?ignore_unavailable=true`, {
+  const [countRes, tsRes, keyFields] = await Promise.all([
+    esFetch(`/${name}/_count?ignore_unavailable=true`),
+    esFetch(`/${name}/_search?ignore_unavailable=true`, {
       method: 'POST',
       body: {
         size: 0,
@@ -447,27 +394,46 @@ async function discoverDataStreams(maxIndices: number): Promise<DataStreamInfo[]
           max_ts: { max: { field: '@timestamp' } },
         },
       },
-    });
+    }),
+    fetchFieldProfiles(name),
+  ]);
 
-    let timeRange: TimeRange = { from: '', to: '' };
-    let freshness: DataFreshness = { last_document: '', status: 'no_data' };
-    if (tsRes.ok) {
-      const tsData = tsRes.data as { aggregations?: Record<string, unknown> };
-      const tsAggs = tsData.aggregations ?? {};
-      const minTs = aggValueAsString(tsAggs.min_ts);
-      const maxTs = aggValueAsString(tsAggs.max_ts);
-      if (minTs && maxTs) {
-        timeRange = { from: minTs, to: maxTs };
-        freshness = computeFreshness(maxTs);
-      }
+  const docCount = countRes.ok ? ((countRes.data as { count?: number })?.count ?? 0) : 0;
+
+  let timeRange: TimeRange = { from: '', to: '' };
+  let freshness: DataFreshness = { last_document: '', status: 'no_data' };
+  if (tsRes.ok) {
+    const tsData = tsRes.data as { aggregations?: Record<string, unknown> };
+    const tsAggs = tsData.aggregations ?? {};
+    const minTs = aggValueAsString(tsAggs.min_ts);
+    const maxTs = aggValueAsString(tsAggs.max_ts);
+    if (minTs && maxTs) {
+      timeRange = { from: minTs, to: maxTs };
+      freshness = computeFreshness(maxTs);
     }
-
-    const keyFields = await fetchFieldProfiles(name);
-
-    results.push({ name, type: dsType, doc_count: docCount, time_range: timeRange, freshness, key_fields: keyFields });
   }
 
-  return results;
+  return { name, type: dsType, doc_count: docCount, time_range: timeRange, freshness, key_fields: keyFields };
+}
+
+async function discoverDataStreams(maxIndices: number, dataStreamFilter?: string[]): Promise<DataStreamInfo[]> {
+  const res = await esFetch('/_resolve/index/*?expand_wildcards=open');
+  if (!res.ok) return [];
+
+  const data = res.data as { data_streams?: Array<{ name: string }> };
+  let streams = data.data_streams ?? [];
+  if (dataStreamFilter?.length) {
+    streams = streams.filter((s) =>
+      dataStreamFilter.some((pattern) =>
+        pattern.includes('*')
+          ? new RegExp(`^${pattern.replace(/\*/g, '.*')}$`).test(s.name)
+          : s.name === pattern
+      )
+    );
+  }
+  streams = streams.slice(0, maxIndices);
+
+  return Promise.all(streams.map((stream) => profileDataStream(stream.name)));
 }
 
 async function fetchFieldProfiles(index: string): Promise<FieldProfile[]> {
@@ -586,7 +552,7 @@ export async function runO11yDiscovery(options?: {
   const to = options?.timeRangeTo ?? now.toISOString();
   const maxIndices = options?.maxIndices ?? DEFAULT_MAX_INDICES;
 
-  const [services, hosts, containers, logSources, dataStreams, iotProfiles] = await Promise.all([
+  const results = await Promise.allSettled([
     discoverApmServices(from, to, options?.serviceNames),
     discoverHosts(from, to),
     discoverContainers(from, to),
@@ -594,6 +560,14 @@ export async function runO11yDiscovery(options?: {
     discoverDataStreams(maxIndices),
     discoverIoTProfiles(from, to),
   ]);
+
+  const [services, hosts, containers, logSources, dataStreams, iotProfiles] = results.map(
+    (r, i) => {
+      if (r.status === 'fulfilled') return r.value;
+      console.warn(`[discover-o11y-data] sub-discovery ${i} failed: ${r.reason}`);
+      return [];
+    }
+  ) as [ApmService[], HostInfo[], ContainerInfo[], LogSource[], DataStreamInfo[], IoTProfile[]];
 
   return { services, hosts, containers, logSources, dataStreams, iotProfiles };
 }
@@ -624,6 +598,7 @@ export function registerDiscoverO11yData(server: ToolRegistrationContext): void 
           .describe('End of time range (ISO date or ES expression like "now"). Defaults to now'),
         max_indices: z
           .number()
+          .max(1000)
           .optional()
           .describe('Maximum number of data streams to profile in detail. Defaults to 50'),
       }),
@@ -641,10 +616,7 @@ export function registerDiscoverO11yData(server: ToolRegistrationContext): void 
 
       const clusterResult = await fetchClusterInfo();
       if (!clusterResult.ok) {
-        return {
-          content: [{ type: 'text' as const, text: `Failed to connect to Elasticsearch: ${clusterResult.error}` }],
-          isError: true,
-        };
+        return errorResponse(`Failed to connect to Elasticsearch: ${clusterResult.error}`);
       }
 
       const now = new Date();
@@ -652,14 +624,22 @@ export function registerDiscoverO11yData(server: ToolRegistrationContext): void 
       const to = input.time_range_to ?? now.toISOString();
       const maxIndices = input.max_indices ?? DEFAULT_MAX_INDICES;
 
-      const [services, hosts, containers, logSources, dataStreams, iotProfiles] = await Promise.all([
+      const results = await Promise.allSettled([
         discoverApmServices(from, to, input.service_names),
         discoverHosts(from, to),
         discoverContainers(from, to),
         discoverLogSources(from, to),
-        discoverDataStreams(maxIndices),
+        discoverDataStreams(maxIndices, input.data_streams),
         discoverIoTProfiles(from, to),
       ]);
+
+      const [services, hosts, containers, logSources, dataStreams, iotProfiles] = results.map(
+        (r, i) => {
+          if (r.status === 'fulfilled') return r.value;
+          console.warn(`[discover-o11y-data] sub-discovery ${i} failed: ${r.reason}`);
+          return [];
+        }
+      ) as [ApmService[], HostInfo[], ContainerInfo[], LogSource[], DataStreamInfo[], IoTProfile[]];
 
       const result: DiscoveryResult = {
         cluster_info: clusterResult.info,
@@ -672,18 +652,18 @@ export function registerDiscoverO11yData(server: ToolRegistrationContext): void 
         discovery_time_ms: Date.now() - startTime,
       };
 
-      const clusterUuid = await getClusterUuid();
+      const clusterUuid = clusterResult.info.uuid;
       if (clusterUuid) {
         writeCategory(clusterUuid, 'o11y', {
           services, hosts, containers, log_sources: logSources, iot_profiles: iotProfiles,
-        }).catch(() => {});
+        }).catch((err) => {
+          console.warn(`[discover-o11y-data] Knowledge base write failed: ${err instanceof Error ? err.message : String(err)}`);
+        });
       }
 
       const markdown = formatResultAsMarkdown(result);
 
-      return {
-        content: [{ type: 'text' as const, text: markdown }],
-      };
+      return textResponse(markdown);
     }
   );
 }

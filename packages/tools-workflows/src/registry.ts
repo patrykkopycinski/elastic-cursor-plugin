@@ -38,12 +38,13 @@ async function loadCustomWorkflows(
     for (const file of files) {
       try {
         results.push(await loadWorkflowFile(join(dir, file)));
-      } catch {
-        // Skip malformed custom workflow files
+      } catch (err) {
+        console.warn(`[list-workflows] Skipping malformed custom workflow ${file}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
     return results;
-  } catch {
+  } catch (err) {
+    console.warn(`[list-workflows] Failed to read custom workflow dir ${dir}: ${err instanceof Error ? err.message : String(err)}`);
     return [];
   }
 }

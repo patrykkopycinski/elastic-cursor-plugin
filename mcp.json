@@ -3,7 +3,16 @@
     "elastic": {
       "command": "node",
       "args": ["packages/mcp-server/dist/index.js"],
-      "env": {}
+      "envFile": ".env",
+      "env": {
+        "ES_URL": "${env:ES_URL}",
+        "ES_API_KEY": "${env:ES_API_KEY}",
+        "ES_USERNAME": "${env:ES_USERNAME}",
+        "ES_PASSWORD": "${env:ES_PASSWORD}",
+        "ES_CLOUD_ID": "${env:ES_CLOUD_ID}",
+        "KIBANA_URL": "${env:KIBANA_URL}",
+        "ELASTIC_CLOUD_API_KEY": "${env:ELASTIC_CLOUD_API_KEY}"
+      }
     },
     "elastic-docs": {
       "url": "https://www.elastic.co/docs/_mcp/"

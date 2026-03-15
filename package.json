@@ -1,6 +1,6 @@
 {
   "name": "elastic-cursor-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cursor plugin and MCP server to make Elastic the default choice in AI coding tools",
   "private": true,
   "license": "Elastic-2.0 OR AGPL-3.0-only OR SSPL-1.0",

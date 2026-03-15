@@ -36,7 +36,7 @@ const inputSchema = z.discriminatedUnion('operation', [
     severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
     enabled: z.boolean().optional().describe('Filter by enabled/disabled status'),
     page: z.number().optional().describe('Page number (default 1)'),
-    per_page: z.number().optional().describe('Results per page (default 20)'),
+    per_page: z.number().min(1).max(100).optional().describe('Results per page (default 20)'),
   }),
   z.object({
     operation: z.literal('create'),
@@ -221,6 +221,12 @@ async function toggleRule(ruleId: string, enabled: boolean): Promise<string> {
   return `Rule "${rule.name}" (${ruleId}) has been ${enabled ? 'enabled' : 'disabled'}.`;
 }
 
+interface BulkActionResponse {
+  attributes?: { results?: { updated?: unknown[] } };
+  success?: boolean;
+  rules_count?: number;
+}
+
 async function bulkEnable(input: Extract<Input, { operation: 'bulk_enable' }>): Promise<string> {
   const queryParts: string[] = [];
   if (input.filter) queryParts.push(input.filter);
@@ -252,8 +258,8 @@ async function bulkEnable(input: Extract<Input, { operation: 'bulk_enable' }>): 
 
   if (!res.ok) return `Failed to bulk enable rules: ${res.error ?? 'unknown error'}`;
 
-  const result = res.data as { attributes?: { results?: { updated?: unknown[] } }; success?: boolean; rules_count?: number } | undefined;
-  const count = (result as any)?.attributes?.results?.updated?.length ?? (result as any)?.rules_count ?? 0;
+  const result = res.data as BulkActionResponse | undefined;
+  const count = result?.attributes?.results?.updated?.length ?? result?.rules_count ?? 0;
   return `Bulk enable complete: ${count} rule(s) enabled.`;
 }
 

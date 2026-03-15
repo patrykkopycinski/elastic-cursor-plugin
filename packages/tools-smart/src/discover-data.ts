@@ -22,9 +22,9 @@ import type {
   PipelineInfo,
   LifecyclePolicy,
 } from './discover-data-types.js';
+import { computeFreshness, aggValueAsString } from './discovery-utils.js';
 
 const DEFAULT_MAX_INDICES = 200;
-const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 const ECS_PREFIXES = [
   'agent.', 'cloud.', 'container.', 'destination.', 'ecs.', 'event.', 'file.',
@@ -34,28 +34,6 @@ const ECS_PREFIXES = [
 
 function isEcsField(name: string): boolean {
   return ECS_PREFIXES.some((prefix) => name.startsWith(prefix));
-}
-
-function computeFreshness(lastDocIso: string | null): IndexInfo['freshness'] {
-  if (!lastDocIso) {
-    return { last_document: '', status: 'no_data' };
-  }
-  const age = Date.now() - new Date(lastDocIso).getTime();
-  return {
-    last_document: lastDocIso,
-    status: age < STALE_THRESHOLD_MS ? 'active' : 'stale',
-  };
-}
-
-function aggValueAsString(agg: unknown): string | null {
-  if (agg && typeof agg === 'object' && 'value_as_string' in agg) {
-    return (agg as { value_as_string: string }).value_as_string;
-  }
-  if (agg && typeof agg === 'object' && 'value' in agg) {
-    const v = (agg as { value: unknown }).value;
-    return typeof v === 'number' ? new Date(v).toISOString() : null;
-  }
-  return null;
 }
 
 function classifyIndex(name: string): IndexInfo['type'] {
@@ -264,7 +242,8 @@ async function fetchIlmPolicies(): Promise<LifecyclePolicy[]> {
         managed: !!entry.policy?._meta?.managed,
       };
     });
-  } catch {
+  } catch (err) {
+    console.warn(`[discover-data] fetchIlmPolicies failed: ${err instanceof Error ? err.message : String(err)}`);
     return [];
   }
 }
@@ -292,8 +271,8 @@ async function fetchDataStreamLifecycles(): Promise<Map<string, string>> {
         lifecycleMap.set(ds.name, `ILM: ${ilm}`);
       }
     }
-  } catch {
-    // Data stream API may not be available
+  } catch (err) {
+    console.warn(`[discover-data] fetchDataStreamLifecycles failed: ${err instanceof Error ? err.message : String(err)}`);
   }
   return lifecycleMap;
 }
@@ -403,6 +382,7 @@ export function registerDiscoverData(server: ToolRegistrationContext): void {
           .describe('Include ILM/lifecycle policies (default true)'),
         max_indices: z
           .number()
+          .max(1000)
           .optional()
           .describe('Max indices to profile in detail (default 200)'),
       }),
@@ -503,7 +483,9 @@ export function registerDiscoverData(server: ToolRegistrationContext): void {
           writeCategory(clusterUuid, 'templates', { index_templates: kbTemplates, component_templates: componentTemplates }),
           writeCategory(clusterUuid, 'pipelines', kbPipelines),
           writeCategory(clusterUuid, 'lifecycle', lifecyclePolicies),
-        ]).catch(() => {});
+        ]).catch((err) => {
+          console.warn(`[discover-data] Knowledge base write failed: ${err instanceof Error ? err.message : String(err)}`);
+        });
       }
 
       const markdown = formatProfileAsMarkdown(profile, dsLifecycles);

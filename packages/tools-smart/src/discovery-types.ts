@@ -20,6 +20,7 @@ export interface DiscoveryResult {
 
 export interface ClusterInfo {
   name: string;
+  uuid: string | null;
   version: string;
   is_serverless: boolean;
 }
@@ -114,11 +115,4 @@ export interface IoTProfile {
   total_docs: number;
   time_range: TimeRange;
   freshness: DataFreshness;
-}
-
-export interface DiscoveryOptions {
-  data_streams?: string[];
-  service_names?: string[];
-  time_range?: { from: string; to: string };
-  max_indices?: number;
 }

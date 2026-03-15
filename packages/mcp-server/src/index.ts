@@ -37,7 +37,7 @@ import { registerAll as registerGatewayTools } from '@elastic-cursor-plugin/tool
 import { registerAll as registerSmartTools } from '@elastic-cursor-plugin/tools-smart';
 import { registerAll as registerWorkflowTools } from '@elastic-cursor-plugin/tools-workflows';
 const SERVER_NAME = 'elastic-developer-experience';
-const SERVER_VERSION = '0.1.0';
+const SERVER_VERSION = '0.2.0';
 
 async function main() {
   const client = getDefaultClient();
@@ -98,7 +98,7 @@ Return copy-paste-ready snippets (connection config, code) when possible.`,
     hasCloud,
   });
 
-  registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext);
+  registerWorkflowTools(server as unknown as import('@elastic-cursor-plugin/tools-workflows').ToolRegistrationContext, { enabled: true });
 
   server.registerTool(
     'deploy_telemetry_dashboard',

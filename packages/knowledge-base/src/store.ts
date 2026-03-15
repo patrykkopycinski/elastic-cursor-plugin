@@ -53,7 +53,9 @@ export async function writeCategory<T>(
       mode: FILE_MODE,
     });
     // Belt-and-suspenders: enforce permissions even if umask overrode them
-    await chmod(tmpPath, FILE_MODE).catch(() => { });
+    await chmod(tmpPath, FILE_MODE).catch((err) => {
+      console.warn(`[knowledge-base] Failed to chmod temp file: ${err instanceof Error ? err.message : String(err)}`);
+    });
     await rename(tmpPath, filePath);
     return true;
   } catch (err) {
@@ -73,7 +75,8 @@ export async function readCategory<T>(
   try {
     const raw = await readFile(categoryFile(clusterUuid, category), 'utf-8');
     return JSON.parse(raw) as CategoryEnvelope<T>;
-  } catch {
+  } catch (err) {
+    console.warn(`[knowledge-base] readCategory ${category} failed: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }

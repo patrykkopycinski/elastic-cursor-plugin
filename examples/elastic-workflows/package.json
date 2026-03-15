@@ -7,6 +7,6 @@
     "start": "node run-workflow.js"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^8.17.0"
+    "@elastic/elasticsearch": "^9.0.0"
   }
 }

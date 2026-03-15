@@ -81,7 +81,7 @@ const ES_ENDPOINT = '${endpoint}';
 const API_KEY = import.meta.env.VITE_ES_API_KEY ?? '';
 
 const query = ref('');
-const results = ref<Array<Record<string, any>>>([]);
+const results = ref<Array<Record<string, unknown>>>([]);
 const totalResults = ref(0);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -127,8 +127,8 @@ async function search(term: string) {
     totalResults.value = typeof data.hits?.total === 'object'
       ? data.hits.total.value
       : (data.hits?.total ?? 0);
-  } catch (err: any) {
-    error.value = err.message ?? 'Search failed';
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Search failed';
     results.value = [];
   } finally {
     loading.value = false;

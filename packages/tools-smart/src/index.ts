@@ -39,29 +39,38 @@ export interface SmartToolsOptions {
   hasCloud?: boolean;
 }
 
-export function registerAll(server: ToolRegistrationContext, _options: SmartToolsOptions = {}): void {
-  registerDiscoverData(server);
-  registerDiscoverO11yData(server);
-  registerGetDataSummary(server);
-  registerCreateIotDashboard(server);
-  registerSetupApm(server);
-  registerSetupLogShipping(server);
-  registerCreateAlertRule(server);
-  registerCreateDashboard(server);
-  registerSiemQuickstart(server);
-  registerGenerateSearchUi(server);
+export function registerAll(server: ToolRegistrationContext, options: SmartToolsOptions = {}): void {
+  // Always register (no external deps)
   registerGetDeploymentGuide(server);
   registerGetConnectionConfig(server);
-  registerKibanaInfo(server);
-  registerDiscoverSecurityData(server);
-  registerGetSecuritySummary(server);
-  registerGetClusterContext(server);
-  registerRefreshClusterKnowledge(server);
-  registerClearClusterKnowledge(server);
-  registerAllAgentBuilder(server);
-  registerManageDetectionRules(server);
-  registerTriageAlerts(server);
-  registerManageCases(server);
+  registerSetupApm(server);
+  registerSetupLogShipping(server);
+  registerCreateDashboard(server);
+  registerCreateAlertRule(server);
+  registerSiemQuickstart(server);
+  registerGenerateSearchUi(server);
+
+  // Requires Elasticsearch
+  if (options.hasEs) {
+    registerDiscoverData(server);
+    registerDiscoverO11yData(server);
+    registerGetDataSummary(server);
+    registerCreateIotDashboard(server);
+    registerDiscoverSecurityData(server);
+    registerGetSecuritySummary(server);
+    registerGetClusterContext(server);
+    registerRefreshClusterKnowledge(server);
+    registerClearClusterKnowledge(server);
+    registerKibanaInfo(server);
+  }
+
+  // Requires Kibana
+  if (options.hasKibana) {
+    registerManageDetectionRules(server);
+    registerTriageAlerts(server);
+    registerManageCases(server);
+    registerAllAgentBuilder(server);
+  }
 }
 
 export {

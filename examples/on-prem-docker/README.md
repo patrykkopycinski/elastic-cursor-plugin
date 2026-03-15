@@ -64,7 +64,7 @@ To run an **Elastic Agent** in Docker (e.g. to ship logs or metrics):
      -e FLEET_URL=http://fleet-server:8220 \
      -e FLEET_INSECURE=true \
      --network=on-prem-docker_default \
-     docker.elastic.co/beats/elastic-agent:8.17.0
+     docker.elastic.co/beats/elastic-agent:9.4.0-SNAPSHOT
    ```
    (Use the actual network name from `docker network ls` if different.)
 

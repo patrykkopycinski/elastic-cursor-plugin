@@ -34,6 +34,12 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status | grep -q 'available'"]
+      interval: 30s
+      timeout: 10s
+      retries: 30
+      start_period: 120s
 
   setup:
     image: curlimages/curl:latest
@@ -47,6 +53,12 @@ services:
         echo "==> Waiting for Elasticsearch..."
         until curl -sf -u elastic:changeme http://elasticsearch:9200/_cluster/health; do sleep 2; done
         echo ""
+
+        NOW=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
+        T1=$(date -u -d '-4 minutes' +%Y-%m-%dT%H:%M:%S.000Z 2>/dev/null || date -u -v-4M +%Y-%m-%dT%H:%M:%S.000Z)
+        T2=$(date -u -d '-3 minutes' +%Y-%m-%dT%H:%M:%S.000Z 2>/dev/null || date -u -v-3M +%Y-%m-%dT%H:%M:%S.000Z)
+        T3=$(date -u -d '-2 minutes' +%Y-%m-%dT%H:%M:%S.000Z 2>/dev/null || date -u -v-2M +%Y-%m-%dT%H:%M:%S.000Z)
+        T4=$(date -u -d '-1 minute' +%Y-%m-%dT%H:%M:%S.000Z 2>/dev/null || date -u -v-1M +%Y-%m-%dT%H:%M:%S.000Z)
 
         echo "==> Setting kibana_system password..."
         curl -sf -u elastic:changeme -X POST \
@@ -93,17 +105,17 @@ services:
         curl -sf -u elastic:changeme -X POST \
           "http://elasticsearch:9200/sample-logs/_bulk" \
           -H 'Content-Type: application/x-ndjson' \
-          -d '{"index":{}}
-        {"@timestamp":"2024-01-15T10:00:00Z","message":"Application started successfully","level":"info","service":"web-api","host":"server-01"}
-        {"index":{}}
-        {"@timestamp":"2024-01-15T10:01:00Z","message":"Request processed in 120ms","level":"info","service":"web-api","host":"server-01"}
-        {"index":{}}
-        {"@timestamp":"2024-01-15T10:02:00Z","message":"Database connection timeout","level":"error","service":"web-api","host":"server-01"}
-        {"index":{}}
-        {"@timestamp":"2024-01-15T10:03:00Z","message":"Retrying database connection","level":"warn","service":"web-api","host":"server-01"}
-        {"index":{}}
-        {"@timestamp":"2024-01-15T10:04:00Z","message":"Cache miss for key user:123","level":"debug","service":"web-api","host":"server-02"}
-        '
+          -d "{\"index\":{}}
+        {\"@timestamp\":\"${T1}\",\"message\":\"Application started successfully\",\"level\":\"info\",\"service\":\"web-api\",\"host\":\"server-01\"}
+        {\"index\":{}}
+        {\"@timestamp\":\"${T2}\",\"message\":\"Request processed in 120ms\",\"level\":\"info\",\"service\":\"web-api\",\"host\":\"server-01\"}
+        {\"index\":{}}
+        {\"@timestamp\":\"${T3}\",\"message\":\"Database connection timeout\",\"level\":\"error\",\"service\":\"web-api\",\"host\":\"server-01\"}
+        {\"index\":{}}
+        {\"@timestamp\":\"${T4}\",\"message\":\"Retrying database connection\",\"level\":\"warn\",\"service\":\"web-api\",\"host\":\"server-01\"}
+        {\"index\":{}}
+        {\"@timestamp\":\"${NOW}\",\"message\":\"Cache miss for key user:123\",\"level\":\"debug\",\"service\":\"web-api\",\"host\":\"server-02\"}
+        "
         echo ""
 
         echo "--- Creating sample-metrics index ---"
@@ -127,46 +139,46 @@ services:
         curl -sf -u elastic:changeme -X POST \
           "http://elasticsearch:9200/sample-metrics/_bulk" \
           -H 'Content-Type: application/x-ndjson' \
-          -d '{"index":{}}
-        {"@timestamp":"2024-01-15T10:00:00Z","host":"server-01","cpu_percent":45.2,"memory_used_bytes":4294967296,"disk_used_percent":62.1}
-        {"index":{}}
-        {"@timestamp":"2024-01-15T10:01:00Z","host":"server-01","cpu_percent":78.9,"memory_used_bytes":5368709120,"disk_used_percent":62.3}
-        {"index":{}}
-        {"@timestamp":"2024-01-15T10:00:00Z","host":"server-02","cpu_percent":12.1,"memory_used_bytes":2147483648,"disk_used_percent":45.0}
-        '
+          -d "{\"index\":{}}
+        {\"@timestamp\":\"${T1}\",\"host\":\"server-01\",\"cpu_percent\":45.2,\"memory_used_bytes\":4294967296,\"disk_used_percent\":62.1}
+        {\"index\":{}}
+        {\"@timestamp\":\"${T2}\",\"host\":\"server-01\",\"cpu_percent\":78.9,\"memory_used_bytes\":5368709120,\"disk_used_percent\":62.3}
+        {\"index\":{}}
+        {\"@timestamp\":\"${T1}\",\"host\":\"server-02\",\"cpu_percent\":12.1,\"memory_used_bytes\":2147483648,\"disk_used_percent\":45.0}
+        "
         echo ""
 
         echo "--- Creating APM trace data via data stream ---"
         curl -sf -u elastic:changeme -X POST \
           "http://elasticsearch:9200/traces-apm-default/_bulk" \
           -H 'Content-Type: application/x-ndjson' \
-          -d '{"create":{}}
-        {"@timestamp":"2024-01-15T10:00:00Z","service.name":"web-api","service.environment":"production","transaction.name":"GET /api/users","transaction.type":"request","transaction.duration.us":15000,"transaction.result":"HTTP 2xx"}
-        {"create":{}}
-        {"@timestamp":"2024-01-15T10:00:01Z","service.name":"web-api","service.environment":"production","transaction.name":"POST /api/orders","transaction.type":"request","transaction.duration.us":45000,"transaction.result":"HTTP 2xx"}
-        {"create":{}}
-        {"@timestamp":"2024-01-15T10:00:02Z","service.name":"payment-service","service.environment":"production","transaction.name":"process_payment","transaction.type":"custom","transaction.duration.us":250000,"transaction.result":"success"}
-        '
+          -d "{\"create\":{}}
+        {\"@timestamp\":\"${T1}\",\"service.name\":\"web-api\",\"service.environment\":\"production\",\"transaction.name\":\"GET /api/users\",\"transaction.type\":\"request\",\"transaction.duration.us\":15000,\"transaction.result\":\"HTTP 2xx\"}
+        {\"create\":{}}
+        {\"@timestamp\":\"${T2}\",\"service.name\":\"web-api\",\"service.environment\":\"production\",\"transaction.name\":\"POST /api/orders\",\"transaction.type\":\"request\",\"transaction.duration.us\":45000,\"transaction.result\":\"HTTP 2xx\"}
+        {\"create\":{}}
+        {\"@timestamp\":\"${T3}\",\"service.name\":\"payment-service\",\"service.environment\":\"production\",\"transaction.name\":\"process_payment\",\"transaction.type\":\"custom\",\"transaction.duration.us\":250000,\"transaction.result\":\"success\"}
+        "
         echo ""
 
         echo "--- Creating APM metrics data via data stream ---"
         curl -sf -u elastic:changeme -X POST \
           "http://elasticsearch:9200/metrics-apm.internal-default/_bulk" \
           -H 'Content-Type: application/x-ndjson' \
-          -d '{"create":{}}
-        {"@timestamp":"2024-01-15T10:00:00Z","service.name":"web-api","metricset.name":"app"}
-        '
+          -d "{\"create\":{}}
+        {\"@timestamp\":\"${NOW}\",\"service.name\":\"web-api\",\"metricset.name\":\"app\"}
+        "
         echo ""
 
         echo "--- Creating logs data via data stream ---"
         curl -sf -u elastic:changeme -X POST \
           "http://elasticsearch:9200/logs-generic-default/_bulk" \
           -H 'Content-Type: application/x-ndjson' \
-          -d '{"create":{}}
-        {"@timestamp":"2024-01-15T10:00:00Z","message":"Nginx access log entry","log.level":"info","service.name":"nginx"}
-        {"create":{}}
-        {"@timestamp":"2024-01-15T10:00:01Z","message":"Error connecting to upstream","log.level":"error","service.name":"nginx"}
-        '
+          -d "{\"create\":{}}
+        {\"@timestamp\":\"${T2}\",\"message\":\"Nginx access log entry\",\"log.level\":\"info\",\"service.name\":\"nginx\"}
+        {\"create\":{}}
+        {\"@timestamp\":\"${T3}\",\"message\":\"Error connecting to upstream\",\"log.level\":\"error\",\"service.name\":\"nginx\"}
+        "
         echo ""
 
         echo "--- Creating .siem-signals-default for security discovery ---"
@@ -196,11 +208,11 @@ services:
         curl -sf -u elastic:changeme -X POST \
           "http://elasticsearch:9200/.alerts-security.alerts-default/_bulk" \
           -H 'Content-Type: application/x-ndjson' \
-          -d '{"index":{}}
-        {"@timestamp":"2024-01-15T10:00:00Z","kibana.alert.rule.name":"Suspicious Process","kibana.alert.severity":"high","kibana.alert.status":"open"}
-        {"index":{}}
-        {"@timestamp":"2024-01-15T10:01:00Z","kibana.alert.rule.name":"Brute Force Attempt","kibana.alert.severity":"medium","kibana.alert.status":"open"}
-        '
+          -d "{\"index\":{}}
+        {\"@timestamp\":\"${T3}\",\"kibana.alert.rule.name\":\"Suspicious Process\",\"kibana.alert.severity\":\"high\",\"kibana.alert.status\":\"open\"}
+        {\"index\":{}}
+        {\"@timestamp\":\"${T4}\",\"kibana.alert.rule.name\":\"Brute Force Attempt\",\"kibana.alert.severity\":\"medium\",\"kibana.alert.status\":\"open\"}
+        "
         echo ""
 
         echo "==> All seed data created successfully!"

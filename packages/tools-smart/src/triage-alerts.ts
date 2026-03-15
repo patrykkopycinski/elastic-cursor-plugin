@@ -28,7 +28,7 @@ const inputSchema = z.discriminatedUnion('operation', [
     host_name: z.string().optional().describe('Filter by host name'),
     user_name: z.string().optional().describe('Filter by user name'),
     time_range: z.string().optional().describe('Time range (ISO or ES expression, default now-24h)'),
-    size: z.number().optional().describe('Number of alerts to return (default 20)'),
+    size: z.number().min(1).max(100).optional().describe('Number of alerts to return (default 20)'),
   }),
   z.object({
     operation: z.literal('get'),

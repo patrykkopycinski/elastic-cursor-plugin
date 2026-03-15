@@ -18,32 +18,10 @@ import type {
   AlertSummary,
 } from './security-discovery-types.js';
 import { SECURITY_INDEX_PATTERNS } from './security-discovery-types.js';
+import { computeFreshness, aggValueAsString } from './discovery-utils.js';
+import type { EsAggBucket } from './discovery-utils.js';
 
 const DEFAULT_TIME_RANGE_MS = 24 * 60 * 60 * 1000;
-const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
-
-interface EsAggBucket {
-  key: string;
-  doc_count: number;
-  [k: string]: unknown;
-}
-
-function computeFreshness(lastDocIso: string | null): SecurityDataSource['freshness'] {
-  if (!lastDocIso) return { last_document: '', status: 'no_data' };
-  const age = Date.now() - new Date(lastDocIso).getTime();
-  return { last_document: lastDocIso, status: age < STALE_THRESHOLD_MS ? 'active' : 'stale' };
-}
-
-function aggValueAsString(agg: unknown): string | null {
-  if (agg && typeof agg === 'object' && 'value_as_string' in agg) {
-    return (agg as { value_as_string: string }).value_as_string;
-  }
-  if (agg && typeof agg === 'object' && 'value' in agg) {
-    const v = (agg as { value: unknown }).value;
-    return typeof v === 'number' ? new Date(v).toISOString() : null;
-  }
-  return null;
-}
 
 async function fetchClusterInfo(): Promise<{ name: string; version: string; uuid: string } | null> {
   const res = await esFetch('/');
@@ -115,8 +93,9 @@ async function discoverRuleCoverage(): Promise<RuleCoverage | null> {
   const allRules: Array<Record<string, unknown>> = [];
   let page = 1;
   const perPage = 100;
+  const MAX_PAGES = 100;
 
-  while (true) {
+  while (page <= MAX_PAGES) {
     const res = await kibanaFetch(
       `/api/detection_engine/rules/_find?page=${page}&per_page=${perPage}&sort_field=name&sort_order=asc`
     );
@@ -128,6 +107,10 @@ async function discoverRuleCoverage(): Promise<RuleCoverage | null> {
 
     if (allRules.length >= (body.total ?? 0) || rules.length < perPage) break;
     page++;
+  }
+
+  if (page > MAX_PAGES) {
+    console.warn('discover-security-data: hit max pagination limit for detection rules');
   }
 
   if (allRules.length === 0) return null;
