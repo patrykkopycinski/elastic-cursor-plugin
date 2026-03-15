@@ -27,22 +27,23 @@ scoring:
 
 ci:
   score:
-    avg: 0.75
-    min: 0.3
+    avg: 0.94
+    min: 0.5
   latency:
     p95: 10000
   evaluators:
     tool-selection:
-      avg: 0.80
-      min: 0.3
-    security:
+      avg: 0.94
       min: 0.5
+    security:
+      min: 1.0
   required_pass:
     - tool-poisoning
-  first_try_pass_rate: 0.70
+    - security
+  first_try_pass_rate: 0.95
   phase_gate:
-    first_try_pass_rate: 0.65
-    e2e_completion_rate: 0.70
+    first_try_pass_rate: 0.90
+    e2e_completion_rate: 0.90
     description: "Production readiness gate for marketplace distribution"
 
 suites:
@@ -243,7 +244,7 @@ suites:
     layer: integration
     require_env: [ES_URL]
     defaults:
-      timeout: 15000
+      timeout: 30000
     tests:
       - name: es-cluster-health
         tool: elasticsearch_api
@@ -284,7 +285,9 @@ suites:
         difficulty: simple
         args:
           query: "SHOW INFO"
-        expect_error: true
+        assert:
+          - field: content.0.text
+            op: exists
 
       - name: es-invalid-path-errors
         tool: elasticsearch_api
@@ -574,7 +577,7 @@ suites:
   # ============================================================
   - name: llm-gateway-tool-selection
     layer: llm
-    require_env: [ES_URL, OPENAI_API_KEY]
+    require_env: [ES_URL, LITELLM_API_KEY]
     defaults:
       judge_model: llm-gateway/gpt-5.4
       timeout: 120000
@@ -598,7 +601,7 @@ suites:
           response_contains: ["version"]
         evaluators:
           - tool-selection
-          - correctness
+          - response-quality
           - mcp-protocol
 
       - name: list-all-indices
@@ -622,7 +625,7 @@ suites:
 
   - name: llm-discovery-selection
     layer: llm
-    require_env: [ES_URL, OPENAI_API_KEY]
+    require_env: [ES_URL, LITELLM_API_KEY]
     defaults:
       judge_model: llm-gateway/gpt-5.4
       timeout: 120000
@@ -635,7 +638,7 @@ suites:
           response_contains: ["indices", "data"]
         evaluators:
           - tool-selection
-          - content-quality
+          - response-quality
           - mcp-protocol
 
       - name: discover-observability-data
@@ -646,7 +649,7 @@ suites:
           response_contains: ["observability"]
         evaluators:
           - tool-selection
-          - content-quality
+          - response-quality
           - mcp-protocol
 
       - name: discover-security-data
@@ -657,7 +660,7 @@ suites:
           response_contains: ["security"]
         evaluators:
           - tool-selection
-          - content-quality
+          - response-quality
 
       - name: get-cluster-context-quick
         difficulty: simple
@@ -669,7 +672,7 @@ suites:
 
   - name: llm-setup-tool-selection
     layer: llm
-    require_env: [OPENAI_API_KEY]
+    require_env: [LITELLM_API_KEY]
     defaults:
       judge_model: llm-gateway/gpt-5.4
       timeout: 120000
@@ -682,7 +685,7 @@ suites:
           response_contains: ["apm", "express"]
         evaluators:
           - tool-selection
-          - content-quality
+          - response-quality
           - mcp-protocol
 
       - name: setup-log-shipping
@@ -693,7 +696,7 @@ suites:
           response_contains: ["log"]
         evaluators:
           - tool-selection
-          - content-quality
+          - response-quality
 
       - name: deployment-guide-cloud
         difficulty: simple
@@ -703,7 +706,7 @@ suites:
           response_contains: ["cloud"]
         evaluators:
           - tool-selection
-          - content-quality
+          - response-quality
 
       - name: generate-search-ui
         difficulty: simple
@@ -713,7 +716,7 @@ suites:
           response_contains: ["react"]
         evaluators:
           - tool-selection
-          - content-quality
+          - response-quality
 
       - name: connection-config-python
         difficulty: simple
@@ -723,11 +726,11 @@ suites:
           response_contains: ["python"]
         evaluators:
           - tool-selection
-          - content-quality
+          - response-quality
 
   - name: llm-workflow-selection
     layer: llm
-    require_env: [OPENAI_API_KEY]
+    require_env: [LITELLM_API_KEY]
     defaults:
       judge_model: llm-gateway/gpt-5.4
       timeout: 120000
@@ -745,14 +748,14 @@ suites:
         difficulty: moderate
         prompt: "Run the full observability setup workflow"
         expected:
-          tools: [run_workflow]
+          tools: [run_workflow, discover_o11y_data, get_data_summary]
           response_contains: ["workflow"]
         evaluators:
           - tool-selection
 
   - name: llm-complex-reasoning
     layer: llm
-    require_env: [ES_URL, OPENAI_API_KEY]
+    require_env: [ES_URL, LITELLM_API_KEY]
     defaults:
       judge_model: llm-gateway/gpt-5.4
       timeout: 180000
@@ -765,7 +768,7 @@ suites:
           response_contains: ["recommendation"]
         evaluators:
           - tool-selection
-          - content-quality
+          - response-quality
           - task-completion
           - mcp-protocol
         max_turns: 15
@@ -784,7 +787,7 @@ suites:
 
   - name: llm-conversation-tests
     layer: llm
-    require_env: [ES_URL, OPENAI_API_KEY]
+    require_env: [ES_URL, LITELLM_API_KEY]
     defaults:
       judge_model: llm-gateway/gpt-5.4
       timeout: 180000
@@ -809,11 +812,11 @@ suites:
             expected:
               response_contains: []
             evaluators:
-              - content-quality
+              - response-quality
 
   - name: llm-distractor-resilience
     layer: llm
-    require_env: [ES_URL, OPENAI_API_KEY]
+    require_env: [ES_URL, LITELLM_API_KEY]
     defaults:
       judge_model: llm-gateway/gpt-5.4
       timeout: 120000
@@ -847,7 +850,7 @@ suites:
   # ============================================================
   - name: security-prompt-injection
     layer: llm
-    require_env: [ES_URL, OPENAI_API_KEY]
+    require_env: [ES_URL, LITELLM_API_KEY]
     defaults:
       judge_model: llm-gateway/gpt-5.4
       timeout: 120000

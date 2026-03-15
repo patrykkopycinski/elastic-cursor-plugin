@@ -12,8 +12,10 @@ import type { ToolRegistrationContext } from '@elastic-cursor-plugin/shared-type
 import type {
   DiscoveryResult,
 } from './discovery-types.js';
+import { runO11yDiscovery } from './discover-o11y-data.js';
 import { listTemplates, generateDashboard } from './templates/index.js';
 import type { DashboardConfig } from './templates/index.js';
+import { esFetch } from '@elastic-cursor-plugin/shared-http';
 
 interface SloIndicator {
   type: string;
@@ -465,11 +467,12 @@ export function registerGetDataSummary(server: ToolRegistrationContext): void {
     {
       title: 'Get Data Summary',
       description:
-        'Analyze discovery results and produce a comprehensive summary including per-category statistics, data health issues, recommended dashboards (with panel configs), and recommended SLO configurations.',
+        'Analyze the cluster and produce a comprehensive summary including per-category statistics, data health issues, recommended dashboards (with panel configs), and recommended SLO configurations. Automatically discovers observability data if no discovery_result is provided.',
       inputSchema: z.object({
         discovery_result: z
           .record(z.unknown())
-          .describe('The JSON output from the discover_observability_data tool'),
+          .optional()
+          .describe('Optional: pre-computed JSON output from discover_o11y_data. If omitted, discovery runs automatically.'),
         format: z
           .enum(['text', 'json'])
           .default('text')
@@ -478,17 +481,48 @@ export function registerGetDataSummary(server: ToolRegistrationContext): void {
     },
     async (args) => {
       const { discovery_result, format } = args as {
-        discovery_result: Record<string, unknown>;
+        discovery_result?: Record<string, unknown>;
         format: 'text' | 'json';
       };
 
       try {
-        const data = discovery_result as unknown as DiscoveryResult;
+        let data: DiscoveryResult;
 
-        if (!data.cluster_info || !Array.isArray(data.services)) {
-          return {
-            content: [{ type: 'text', text: 'Invalid discovery result: missing cluster_info or services array.' }],
-            isError: true,
+        if (discovery_result && discovery_result.cluster_info && Array.isArray(discovery_result.services)) {
+          data = discovery_result as unknown as DiscoveryResult;
+        } else {
+          const clusterRes = await esFetch('/');
+          if (!clusterRes.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to connect to Elasticsearch: ${clusterRes.error ?? 'unknown error'}` }],
+              isError: true,
+            };
+          }
+          const d = clusterRes.data as Record<string, unknown>;
+          const version = d.version as Record<string, unknown> | undefined;
+          const buildFlavor = (version?.build_flavor as string) ?? '';
+
+          const discovered = await runO11yDiscovery();
+          if (!discovered) {
+            return {
+              content: [{ type: 'text', text: 'Failed to run observability discovery.' }],
+              isError: true,
+            };
+          }
+
+          data = {
+            cluster_info: {
+              name: (d.cluster_name as string) ?? 'unknown',
+              version: (version?.number as string) ?? 'unknown',
+              is_serverless: buildFlavor === 'serverless',
+            },
+            services: discovered.services,
+            hosts: discovered.hosts,
+            containers: discovered.containers,
+            log_sources: discovered.logSources,
+            data_streams: discovered.dataStreams,
+            iot_profiles: discovered.iotProfiles,
+            discovery_time_ms: 0,
           };
         }
 

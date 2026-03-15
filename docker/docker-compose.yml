@@ -1,6 +1,6 @@
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.0-SNAPSHOT
     container_name: elastic-plugin-eval-es
     environment:
       - discovery.type=single-node
@@ -20,7 +20,7 @@ services:
       - es-data:/usr/share/elasticsearch/data
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.17.0
+    image: docker.elastic.co/kibana/kibana:9.4.0-SNAPSHOT
     container_name: elastic-plugin-eval-kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
@@ -136,78 +136,35 @@ services:
         '
         echo ""
 
-        echo "--- Creating traces-apm-default index (APM-like) ---"
-        curl -sf -u elastic:changeme -X PUT \
-          "http://elasticsearch:9200/traces-apm-default" \
-          -H 'Content-Type: application/json' \
-          -d '{
-            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
-            "mappings": {
-              "properties": {
-                "@timestamp": {"type": "date"},
-                "service.name": {"type": "keyword"},
-                "service.environment": {"type": "keyword"},
-                "transaction.name": {"type": "keyword"},
-                "transaction.type": {"type": "keyword"},
-                "transaction.duration.us": {"type": "long"},
-                "transaction.result": {"type": "keyword"},
-                "span.type": {"type": "keyword"}
-              }
-            }
-          }'
-        echo ""
-
+        echo "--- Creating APM trace data via data stream ---"
         curl -sf -u elastic:changeme -X POST \
           "http://elasticsearch:9200/traces-apm-default/_bulk" \
           -H 'Content-Type: application/x-ndjson' \
-          -d '{"index":{}}
+          -d '{"create":{}}
         {"@timestamp":"2024-01-15T10:00:00Z","service.name":"web-api","service.environment":"production","transaction.name":"GET /api/users","transaction.type":"request","transaction.duration.us":15000,"transaction.result":"HTTP 2xx"}
-        {"index":{}}
+        {"create":{}}
         {"@timestamp":"2024-01-15T10:00:01Z","service.name":"web-api","service.environment":"production","transaction.name":"POST /api/orders","transaction.type":"request","transaction.duration.us":45000,"transaction.result":"HTTP 2xx"}
-        {"index":{}}
+        {"create":{}}
         {"@timestamp":"2024-01-15T10:00:02Z","service.name":"payment-service","service.environment":"production","transaction.name":"process_payment","transaction.type":"custom","transaction.duration.us":250000,"transaction.result":"success"}
         '
         echo ""
 
-        echo "--- Creating metrics-apm.internal-default index ---"
-        curl -sf -u elastic:changeme -X PUT \
-          "http://elasticsearch:9200/metrics-apm.internal-default" \
-          -H 'Content-Type: application/json' \
-          -d '{
-            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
-            "mappings": {
-              "properties": {
-                "@timestamp": {"type": "date"},
-                "service.name": {"type": "keyword"},
-                "metricset.name": {"type": "keyword"}
-              }
-            }
-          }'
+        echo "--- Creating APM metrics data via data stream ---"
+        curl -sf -u elastic:changeme -X POST \
+          "http://elasticsearch:9200/metrics-apm.internal-default/_bulk" \
+          -H 'Content-Type: application/x-ndjson' \
+          -d '{"create":{}}
+        {"@timestamp":"2024-01-15T10:00:00Z","service.name":"web-api","metricset.name":"app"}
+        '
         echo ""
 
-        echo "--- Creating logs-* index for log shipping discovery ---"
-        curl -sf -u elastic:changeme -X PUT \
-          "http://elasticsearch:9200/logs-generic-default" \
-          -H 'Content-Type: application/json' \
-          -d '{
-            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
-            "mappings": {
-              "properties": {
-                "@timestamp": {"type": "date"},
-                "message": {"type": "text"},
-                "log.level": {"type": "keyword"},
-                "service.name": {"type": "keyword"}
-              }
-            }
-          }'
-        echo ""
-
+        echo "--- Creating logs data via data stream ---"
         curl -sf -u elastic:changeme -X POST \
           "http://elasticsearch:9200/logs-generic-default/_bulk" \
           -H 'Content-Type: application/x-ndjson' \
-          -d '{"index":{}}
+          -d '{"create":{}}
         {"@timestamp":"2024-01-15T10:00:00Z","message":"Nginx access log entry","log.level":"info","service.name":"nginx"}
-        {"index":{}}
+        {"create":{}}
         {"@timestamp":"2024-01-15T10:00:01Z","message":"Error connecting to upstream","log.level":"error","service.name":"nginx"}
         '
         echo ""
