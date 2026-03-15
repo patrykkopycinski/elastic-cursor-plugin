@@ -46,7 +46,11 @@ ci:
 
 suites:
   - ./eval-suites/static.yaml
+  - ./eval-suites/static-new-components.yaml
   - ./eval-suites/unit.yaml
   - ./eval-suites/integration.yaml
   - ./eval-suites/llm.yaml
+  - ./eval-suites/llm-new-skill-activation.yaml
+  - ./eval-suites/llm-new-skill-negative.yaml
+  - ./eval-suites/llm-new-agents-commands.yaml
   - ./eval-suites/performance.yaml

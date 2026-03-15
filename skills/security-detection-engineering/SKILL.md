@@ -7,7 +7,26 @@ description: Guide for authoring custom detection rules — from threat hypothes
 
 Guide the user through creating custom detection rules tailored to their environment.
 
+## Trigger
+
+Use when the user asks to:
+- "Create detection rule"
+- "Write a rule"
+- "Custom detection"
+- "Detection engineering"
+- "EQL rule"
+- "KQL alert"
+
+Also activates on keywords: "detection rule", "custom rule", "EQL sequence", "threshold rule", "MITRE detection", "rule authoring"
+
+Do NOT use when:
+- "Set up security" (→ use `security-full-setup`)
+- "Triage alerts" (→ use `security-alert-triage`)
+
 ## Steps
+
+### 0. Get Cluster Context
+Call `get_cluster_context` to get cached cluster awareness — version, health, installed features, and detection engine capabilities. This determines which rule types are supported and what data sources are available.
 
 ### 1. Understand the Threat
 Ask the user what they want to detect:
@@ -98,6 +117,7 @@ Present:
 - Suggested companion rules for broader coverage
 
 ## Tools Used
+- `get_cluster_context` — cached cluster awareness (version, health, capabilities)
 - `discover_security_data` — verify data source availability
 - `manage_detection_rules` — create and manage detection rules
 - `triage_alerts` — check for alerts from the new rule
@@ -113,3 +133,7 @@ Present:
 - `ES_URL` and `ES_API_KEY` configured
 - `KIBANA_URL` configured for rule management
 - Security data sources producing relevant events
+
+## Related Skills
+- `security-full-setup` — complete security setup including bulk rule enablement
+- `security-threat-hunting` — proactive hunting that may lead to new detection rules

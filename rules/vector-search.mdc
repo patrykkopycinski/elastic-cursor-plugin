@@ -1,0 +1,135 @@
+---
+description: Guidance for vector search, semantic search, inference endpoints, and RAG with Elasticsearch.
+alwaysApply: true
+---
+
+# Vector Search & Semantic Search
+
+## When to Use Vector Search
+
+Use vector/semantic search when:
+- Users need similarity-based retrieval (not exact keyword matching)
+- Building RAG (Retrieval-Augmented Generation) pipelines
+- Implementing "find similar" or recommendation features
+- Searching across languages or handling typos/synonyms naturally
+
+## Field Types
+
+### `semantic_text`
+The simplest path — handles embedding generation and search automatically:
+```json
+{
+  "mappings": {
+    "properties": {
+      "content": { "type": "semantic_text", "inference_id": "my-inference" }
+    }
+  }
+}
+```
+- Automatically chunks, embeds, and indexes text
+- Query with `semantic` query type
+- Requires an inference endpoint configured first
+
+### `dense_vector`
+For custom embedding models:
+```json
+{
+  "content_embedding": {
+    "type": "dense_vector",
+    "dims": 768,
+    "index": true,
+    "similarity": "cosine"
+  }
+}
+```
+- Use with `knn` query in search
+- You manage embedding generation yourself
+- Choose `cosine`, `dot_product`, or `l2_norm` similarity
+
+### `sparse_vector`
+For ELSER (Elastic Learned Sparse Encoder):
+```json
+{
+  "ml.tokens": { "type": "sparse_vector" }
+}
+```
+- Use with `sparse_vector` query or `text_expansion` query
+- ELSER generates token weights, no custom embeddings needed
+- Best for English text retrieval out-of-box
+
+## Inference Endpoints
+
+Configure inference before indexing:
+```
+PUT _inference/text_embedding/my-inference
+{
+  "service": "elasticsearch",
+  "service_settings": {
+    "model_id": ".multilingual-e5-small",
+    "num_allocations": 1,
+    "num_threads": 1
+  }
+}
+```
+
+Supported providers: `elasticsearch` (ELSER, E5), `openai`, `cohere`, `azure_openai`, `azure_ai_studio`, `hugging_face`, `google_ai_studio`, `anthropic`
+
+## Search Patterns
+
+### Semantic query (with `semantic_text` fields)
+```json
+{
+  "query": {
+    "semantic": {
+      "field": "content",
+      "query": "how to reset password"
+    }
+  }
+}
+```
+
+### kNN (with `dense_vector` fields)
+```json
+{
+  "knn": {
+    "field": "content_embedding",
+    "query_vector_builder": {
+      "text_embedding": {
+        "model_id": "my-inference",
+        "model_text": "how to reset password"
+      }
+    },
+    "k": 10,
+    "num_candidates": 50
+  }
+}
+```
+
+### Hybrid search (combine keyword + vector)
+Use `sub_searches` with `rank` for RRF (Reciprocal Rank Fusion):
+```json
+{
+  "sub_searches": [
+    { "query": { "match": { "title": "password reset" } } },
+    { "query": { "semantic": { "field": "content", "query": "password reset" } } }
+  ],
+  "rank": { "rrf": { "window_size": 50, "rank_constant": 20 } }
+}
+```
+
+## RAG Pattern
+
+1. Index documents with `semantic_text` field
+2. Search with `semantic` query to retrieve relevant chunks
+3. Pass retrieved chunks as context to an LLM
+4. Use inference endpoints for both embedding and generation
+
+## Decision Guide
+
+| Need | Approach |
+|---|---|
+| Quick semantic search, minimal setup | `semantic_text` + inference endpoint |
+| Custom embeddings from external model | `dense_vector` + kNN query |
+| English text search, no custom model | ELSER + `sparse_vector` |
+| Hybrid keyword + semantic | RRF with `sub_searches` |
+| Multi-language search | `semantic_text` with multilingual-e5-small |

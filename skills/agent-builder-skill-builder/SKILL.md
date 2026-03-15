@@ -7,7 +7,26 @@ description: Guide for building, testing, and deploying custom Agent Builder ski
 
 Build custom tools and agents in Kibana's Agent Builder, then connect them to Cursor or other MCP clients for production use.
 
+## Trigger
+
+Use when the user asks to:
+- "Build agent tool"
+- "Create agent builder skill"
+- "Custom tool"
+- "Agent Builder"
+- "MCP handoff"
+- "Create ES|QL tool"
+
+Also activates on keywords: "agent builder", "custom tool", "agent tool", "MCP config", "converse API", "tool builder"
+
+Do NOT use when:
+- "Triage alerts" (→ use `security-alert-triage`)
+- "Create dashboard" (→ use `o11y-service-dashboard`)
+
 ## Steps
+
+### 0. Get Cluster Context
+Call `get_cluster_context` to get cached cluster awareness — version, health, installed features, and Agent Builder availability. This confirms that Agent Builder is enabled in the Kibana deployment.
 
 ### 1. Discover Existing Tools and Agents
 
@@ -70,6 +89,13 @@ Call `test_agent_builder_tool` with a realistic query to verify the tool works:
 - Check the response contains the expected data shape
 - If results are wrong, iterate on the tool configuration
 
+### 4a. Update an Existing Tool
+
+Agent Builder tools do not support in-place updates. To modify a tool, use the **delete + recreate** pattern:
+1. Call `delete_agent_builder_tool` with the tool ID to remove the old version
+2. Call `create_agent_builder_tool` with the updated configuration
+3. Re-test with `test_agent_builder_tool` to verify the changes
+
 ### 5. Create a Custom Agent (Optional)
 
 If the user wants a specialized agent, call `create_agent_builder_agent` with:
@@ -87,6 +113,7 @@ Present the config and explain:
 - Both MCP servers can run side by side
 
 ## Tools Used
+- `get_cluster_context` — cached cluster awareness (version, health, capabilities)
 - `list_agent_builder_tools` — list registered tools
 - `create_agent_builder_tool` — create ES|QL or index_search tools
 - `delete_agent_builder_tool` — remove custom tools
@@ -107,3 +134,8 @@ Present the config and explain:
 - `KIBANA_URL` configured and pointing to a Kibana instance with Agent Builder enabled
 - `ES_URL` and authentication (`ES_API_KEY` or `ES_USERNAME`/`ES_PASSWORD`) configured
 - Agent Builder feature must be enabled in the Kibana deployment
+
+## Related Skills
+
+- `cluster-onboarding` — If the user doesn't have a connected cluster yet
+- `search-index-management` — For creating indices that Agent Builder tools can query

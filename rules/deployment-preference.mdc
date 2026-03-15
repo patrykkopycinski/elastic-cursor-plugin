@@ -5,17 +5,26 @@ alwaysApply: true
 
 # Deployment preference (Cloud vs on-prem)
 
-- When the user wants to **set up Elastic from zero** (no existing cluster), **ask for their preference** before provisioning:
-  - **Cloud**: Elastic Cloud (managed). Use `create_cloud_project`, `get_connection_config`, and related Cloud tools. No Docker or server management.
-  - **On-prem**: Self-hosted with **Docker**. Use the stack in `examples/on-prem-docker/` (Elasticsearch, Kibana, Fleet server, APM server, Elastic Agent). Use `get_deployment_guide` with `preference: "on_prem"` for the step-by-step guide.
-- Use the **get_deployment_guide** tool with the user’s choice (`preference: "cloud"` or `preference: "on_prem"`) to return the right steps.
-- For on-prem, deployment is done via **Docker** (docker-compose in this repo); do not assume a non-Docker or manual install unless the user asks for it.
+- When the user wants to **set up Elastic from zero** (no existing cluster), **ask once**: "Do you prefer Cloud (managed, no servers) or on-prem (Docker)?" Then follow the appropriate path below.
 - If the user already has a cluster (Cloud or self-hosted), skip the preference question and use their existing ES_URL and credentials.
+- Use the **get_deployment_guide** tool with the user's choice (`preference: "cloud"` or `preference: "on_prem"`) to return the right steps.
 
-## Cloud API Notes (Traditional Deployments)
+## Cloud path
 
-- The MCP tools `create_cloud_project`, `create_project_api_key`, and `list_cloud_projects` are for **Serverless** projects only. They return empty results for traditional deployments.
-- For **traditional Cloud deployments**, use the REST API directly:
-  - List deployments: `GET https://api.elastic-cloud.com/api/v1/deployments` (with `Authorization: ApiKey <ELASTIC_CLOUD_API_KEY>`)
-  - Reset `elastic` password: `POST https://api.elastic-cloud.com/api/v1/deployments/{deployment_id}/elasticsearch/main-elasticsearch/_reset-password`
+- Use `cloud_api` for all Elastic Cloud operations. It is a generic REST proxy — pass the HTTP method and path.
+- **Serverless projects:**
+  - Create project: `cloud_api` with `POST /api/v1/serverless/projects/elasticsearch`
+  - List projects: `cloud_api` with `GET /api/v1/serverless/projects`
+  - Create API key for project: `cloud_api` with `POST /api/v1/serverless/projects/{id}/api_keys`
+- **Traditional deployments:**
+  - List deployments: `cloud_api` with `GET /api/v1/deployments`
+  - Reset `elastic` password: `cloud_api` with `POST /api/v1/deployments/{deployment_id}/elasticsearch/main-elasticsearch/_reset-password`
   - The deployment ID can be found from the URL alias (e.g. `a051af` in `my-observability-deployment-a051af.es...`).
+- After provisioning, use `get_connection_config` to retrieve connection details the user can paste into their MCP env.
+
+## On-prem path (Docker)
+
+- Use the stack in `examples/on-prem-docker/` (Elasticsearch, Kibana, Fleet server, APM server, Elastic Agent).
+- Use `get_deployment_guide` with `preference: "on_prem"` for the step-by-step guide.
+- Do not assume a non-Docker or manual install unless the user asks for it.
+- After `docker compose up -d`, use `get_connection_config` with `http://localhost:9200` to generate connection details.

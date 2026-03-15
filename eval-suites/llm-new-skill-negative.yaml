@@ -1,0 +1,33 @@
+- name: llm-new-skill-negative
+  layer: llm
+  require_env: [LITELLM_API_KEY]
+  defaults:
+    judge_model: llm-gateway/gpt-5.4
+    timeout: 120000
+  tests:
+    - name: cluster-onboarding-negative-activation
+      difficulty: simple
+      prompt: "Show me the top 10 slowest API endpoints in my APM data."
+      expected:
+        tools: [esql_query]
+        response_not_contains: ["onboarding", "set up a new cluster"]
+      evaluators:
+        - tool-selection
+
+    - name: search-index-management-negative-activation
+      difficulty: simple
+      prompt: "Triage the latest critical security alerts and create a case for the most severe one."
+      expected:
+        tools: [triage_alerts]
+        response_not_contains: ["index management", "create index", "mapping"]
+      evaluators:
+        - tool-selection
+
+    - name: apm-log-shipping-setup-negative-activation
+      difficulty: simple
+      prompt: "List all active detection rules and check which MITRE ATT&CK techniques are covered."
+      expected:
+        tools: [manage_detection_rules]
+        response_not_contains: ["APM setup", "log shipping", "instrument"]
+      evaluators:
+        - tool-selection

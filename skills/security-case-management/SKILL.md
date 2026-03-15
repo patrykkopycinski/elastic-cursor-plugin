@@ -7,7 +7,26 @@ description: Guide for creating and managing security investigation cases — fr
 
 Guide the user through Elastic Security case management for tracking investigations.
 
+## Trigger
+
+Use when the user asks to:
+- "Create a case"
+- "Manage cases"
+- "Investigation case"
+- "Security case"
+- "Escalate alert"
+- "Track investigation"
+
+Also activates on keywords: "case management", "security case", "investigation tracking", "escalate", "case queue"
+
+Do NOT use when:
+- "Triage alerts" (→ use `security-alert-triage`)
+- "Hunt threats" (→ use `security-threat-hunting`)
+
 ## Steps
+
+### 0. Get Cluster Context
+Call `get_cluster_context` to get cached cluster awareness — version, health, installed features, and case management capabilities.
 
 ### 1. Assess Current Cases
 Call `manage_cases` with `operation: "list"` to get the existing case queue.
@@ -78,6 +97,8 @@ Present:
 - Recommended follow-ups (new detection rules, process improvements)
 
 ## Tools Used
+- `get_cluster_context` — cached cluster awareness (version, health, capabilities)
+- `discover_security_data` — get context on available security data before case creation
 - `manage_cases` — create, list, update, and close security cases
 - `triage_alerts` — find and manage alerts for case attachment
 - `kibana_api` — attach alerts to cases (`POST /api/cases/<id>/comments`), advanced case operations
@@ -91,3 +112,7 @@ Present:
 - `ES_URL` and `ES_API_KEY` configured
 - `KIBANA_URL` configured for case management
 - Cases feature enabled in Elastic Security
+
+## Related Skills
+- `security-alert-triage` — triage alerts that may lead to case creation
+- `security-threat-hunting` — hunt for threats that may require investigation cases

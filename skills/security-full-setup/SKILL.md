@@ -7,7 +7,25 @@ description: Interactive guide for complete Elastic Security setup — discovers
 
 Guide the user through a complete Elastic Security configuration for their deployment.
 
+## Trigger
+
+Use when the user asks to:
+- "Set up security"
+- "Configure SIEM"
+- "Security onboarding"
+- "Enable detection rules"
+- "Security posture"
+
+Also activates on keywords: "security setup", "SIEM setup", "security onboarding", "detection coverage", "security posture assessment"
+
+Do NOT use when:
+- "Create a custom rule" (→ use `security-detection-engineering`)
+- "Triage alerts" (→ use `security-alert-triage`)
+
 ## Steps
+
+### 0. Get Cluster Context
+Call `get_cluster_context` to get cached cluster awareness — version, health, installed features, and security capabilities. This determines which security features are available and what data is already flowing.
 
 ### 1. Discover Security Data
 Call `discover_security_data` with no filters to get a complete picture of available security data.
@@ -34,6 +52,8 @@ Based on the gaps identified, ask the user which areas to improve:
 - Suggest enabling disabled high-severity rules
 - Offer to enable prebuilt rule packages by category (endpoint, cloud, network, etc.)
 - Allow "all recommended" or specific selections
+
+**Fast-track alternative:** For a quick setup, use `siem_quickstart` to automatically enable the most impactful prebuilt rules based on available data sources. This skips manual rule selection and is ideal for initial deployments.
 
 ### 4. Enable Detection Rules
 For each approved rule category, call `manage_detection_rules` with `operation: "bulk_enable"` and the appropriate filters.
@@ -71,8 +91,10 @@ Present a final summary:
 - Suggested next steps (deploy Elastic Defend, add cloud integrations, configure cases)
 
 ## Tools Used
+- `get_cluster_context` — cached cluster awareness (version, health, capabilities)
 - `discover_security_data` — discover security data sources, rules, and alerts
 - `get_security_summary` — generate posture assessment with gaps and recommendations
+- `siem_quickstart` — fast-track prebuilt rule enablement based on available data
 - `manage_detection_rules` — enable/disable detection rules in bulk
 - `kibana_api` — create dashboards (`POST /api/dashboards/dashboard`), alert rules (`POST /api/alerting/rule`), and query rules (`GET /api/detection_engine/rules/_find`)
 
@@ -84,3 +106,9 @@ Present a final summary:
 - `ES_URL` and `ES_API_KEY` (or basic auth) configured
 - `KIBANA_URL` configured for detection rule and dashboard management
 - At least some security data flowing into Elasticsearch (Elastic Defend, Auditbeat, cloud logs, etc.)
+
+## Related Skills
+- `security-detection-engineering` — create custom detection rules for specific threats
+- `security-alert-triage` — investigate and triage security alerts
+- `security-case-management` — track and manage security investigations
+- `security-threat-hunting` — proactive threat hunting with ES|QL

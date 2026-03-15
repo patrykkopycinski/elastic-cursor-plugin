@@ -16,7 +16,7 @@ Interactive alert triage workflow.
 4. For each selected alert, call `triage_alerts` with `operation: "get"` for full details
 5. Enrich with `esql_query` — recent host activity, user authentication history
 6. Ask for a verdict: true positive (escalate), false positive (exception), or needs investigation
-7. Act on the verdict: update alert status, create a case, or add an exception
+7. Act on the verdict: update alert status, create a case, or add an exception. Use `kibana_api` with `POST /api/detection_engine/rules/{rule_id}/exceptions` to create the exception.
 
 If the user provides an argument, use it as a severity or rule name filter.
 

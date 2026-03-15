@@ -1,0 +1,30 @@
+- name: static-new-skills
+  layer: static
+  tests:
+    - name: skill-frontmatter-cluster-onboarding
+      check: skill_frontmatter
+      components: [cluster-onboarding]
+      difficulty: simple
+
+    - name: skill-frontmatter-search-index-management
+      check: skill_frontmatter
+      components: [search-index-management]
+      difficulty: simple
+
+    - name: skill-frontmatter-apm-log-shipping-setup
+      check: skill_frontmatter
+      components: [apm-log-shipping-setup]
+      difficulty: simple
+
+- name: static-new-rules
+  layer: static
+  tests:
+    - name: vector-search-rule
+      check: rule_frontmatter
+      components: [vector-search]
+      difficulty: simple
+
+    - name: observability-conventions-rule
+      check: rule_frontmatter
+      components: [observability-conventions]
+      difficulty: simple

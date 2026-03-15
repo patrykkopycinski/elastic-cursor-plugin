@@ -1,0 +1,36 @@
+- name: llm-new-skill-activation
+  layer: llm
+  require_env: [LITELLM_API_KEY]
+  defaults:
+    judge_model: llm-gateway/gpt-5.4
+    timeout: 120000
+  tests:
+    - name: cluster-onboarding-activation
+      difficulty: simple
+      prompt: "I just got access to an Elastic Cloud account. Help me set up my first cluster and connect to it."
+      expected:
+        tools: [get_deployment_guide]
+        response_contains: ["Cloud", "connection"]
+      evaluators:
+        - tool-selection
+        - response-quality
+
+    - name: search-index-management-activation
+      difficulty: simple
+      prompt: "I need to create a new Elasticsearch index with custom mappings for my product catalog and configure its lifecycle policy."
+      expected:
+        tools: [elasticsearch_api]
+        response_contains: ["index", "mapping"]
+      evaluators:
+        - tool-selection
+        - response-quality
+
+    - name: apm-log-shipping-setup-activation
+      difficulty: simple
+      prompt: "Set up APM instrumentation for my Node.js microservices and configure log shipping from /var/log/app to Elasticsearch."
+      expected:
+        tools: [setup_apm, setup_log_shipping]
+        response_contains: ["APM", "log"]
+      evaluators:
+        - tool-selection
+        - response-quality

@@ -7,7 +7,26 @@ description: Interactive workflow for investigating and triaging security alerts
 
 Guide the user through investigating and resolving security alerts in their Elastic Security deployment.
 
+## Trigger
+
+Use when the user asks to:
+- "Triage alerts"
+- "Investigate alert"
+- "Review security alerts"
+- "Handle alerts"
+- "Alert queue"
+- "SOC triage"
+
+Also activates on keywords: "alert triage", "alert investigation", "SOC workflow", "alert queue", "security alerts", "alert review"
+
+Do NOT use when:
+- "Set up security" (→ use `security-full-setup`)
+- "Create detection rule" (→ use `security-detection-engineering`)
+
 ## Steps
+
+### 0. Get Cluster Context
+Call `get_cluster_context` to get cached cluster awareness — version, health, installed features, and alerting capabilities.
 
 ### 1. Review Open Alerts
 Call `triage_alerts` with `operation: "list"` to get the current alert queue.
@@ -91,6 +110,7 @@ Present:
 - Suggested next steps
 
 ## Tools Used
+- `get_cluster_context` — cached cluster awareness (version, health, capabilities)
 - `triage_alerts` — list, view, and update alert status
 - `manage_cases` — create and manage investigation cases
 - `esql_query` — run investigative queries for enrichment
@@ -105,3 +125,7 @@ Present:
 - `ES_URL` and `ES_API_KEY` configured
 - `KIBANA_URL` configured for alert and case management
 - Active security alerts in the deployment
+
+## Related Skills
+- `security-case-management` — escalate triaged alerts into investigation cases
+- `security-detection-engineering` — tune or create rules based on triage findings

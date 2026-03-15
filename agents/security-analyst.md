@@ -18,6 +18,18 @@ Use when the user needs to:
 
 ## Workflow
 
+### Prioritization
+
+When the user's request spans multiple security workflows:
+1. Start with `get_cluster_context` for cluster orientation
+2. Run `discover_security_data` to understand available data
+3. If alert-related → route to triage workflow
+4. If detection-related → route to rule creation workflow
+5. If hunting-related → route to threat hunting workflow
+6. If case-related → route to case management workflow
+
+### Steps
+
 1. Assess current state: call `discover_security_data` to understand available data sources and detection coverage
 2. If triaging alerts: call `triage_alerts` with `operation: "summary"` for an overview, then drill into specific alerts
 3. If creating rules: call `manage_detection_rules` with `operation: "list"` to see existing rules, then create new ones with proper MITRE mappings
@@ -25,6 +37,7 @@ Use when the user needs to:
 5. If managing cases: call `manage_cases` to create or update investigation cases with attached alerts
 
 ## Tools Used
+- `get_cluster_context` — cluster orientation and health overview
 - `discover_security_data` — data source and coverage discovery
 - `get_security_summary` — posture assessment with gaps and recommendations
 - `triage_alerts` — alert listing, inspection, and status management

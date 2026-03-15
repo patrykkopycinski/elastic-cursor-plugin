@@ -1,0 +1,57 @@
+- name: llm-new-agent-behavior
+  layer: llm
+  require_env: [LITELLM_API_KEY]
+  defaults:
+    judge_model: llm-gateway/gpt-5.4
+    timeout: 180000
+  tests:
+    - name: observability-engineer-behavior-monitoring
+      difficulty: complex
+      prompt: "My payment service has been slow since this morning. Help me investigate the performance issue."
+      expected:
+        tools: [get_cluster_context, discover_o11y_data]
+        response_contains: ["service", "performance"]
+      evaluators:
+        - tool-selection
+        - response-quality
+        - task-completion
+      max_turns: 15
+
+    - name: observability-engineer-behavior-log-analysis
+      difficulty: complex
+      prompt: "We're seeing a spike in 5xx errors across multiple services. Analyze the logs and traces to find the root cause."
+      expected:
+        tools: [discover_o11y_data, esql_query]
+        response_contains: ["error", "service"]
+      evaluators:
+        - tool-selection
+        - response-quality
+        - task-completion
+      max_turns: 15
+
+- name: llm-new-command-execution
+  layer: llm
+  require_env: [LITELLM_API_KEY]
+  defaults:
+    judge_model: llm-gateway/gpt-5.4
+    timeout: 120000
+  tests:
+    - name: elastic-setup-execution
+      difficulty: moderate
+      prompt: "Run the elastic setup command. I want to use Elastic Cloud."
+      expected:
+        tools: [get_deployment_guide]
+        response_contains: ["Cloud"]
+      evaluators:
+        - tool-selection
+        - response-quality
+
+    - name: o11y-setup-execution
+      difficulty: moderate
+      prompt: "Run the observability setup command to configure full monitoring for my services."
+      expected:
+        tools: [discover_o11y_data, run_workflow]
+        response_contains: ["observability", "monitoring"]
+      evaluators:
+        - tool-selection
+        - response-quality

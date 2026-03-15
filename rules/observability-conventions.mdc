@@ -1,0 +1,64 @@
+---
+description: Conventions for Elastic Observability — APM, logs, metrics, SLOs, and alerting patterns.
+alwaysApply: true
+---
+
+# Observability Conventions
+
+## Data Sources
+
+| Data Type | Index Pattern | Source |
+|---|---|---|
+| APM traces | `traces-apm*` | Elastic APM agents |
+| APM metrics | `metrics-apm*` | Elastic APM agents |
+| APM errors | `logs-apm.error*` | Elastic APM agents |
+| Logs | `logs-*` | Filebeat, Elastic Agent, Logstash |
+| Metrics | `metrics-*` | Metricbeat, Elastic Agent |
+| Synthetics | `synthetics-*` | Elastic Synthetics |
+
+## APM Setup
+
+When instrumenting applications:
+- Use `setup_apm` tool to generate framework-specific instructions
+- Prefer Elastic APM agents over OpenTelemetry SDK for full Kibana integration
+- OpenTelemetry is supported — data lands in `metrics-generic.otel-*`, `traces-apm.rum-*` etc.
+- Always set `service.name`, `service.version`, and `deployment.environment`
+
+## Log Shipping
+
+When shipping logs:
+- Use `setup_log_shipping` to generate Filebeat/Agent config
+- Use ECS (Elastic Common Schema) field names
+- Key fields: `message`, `log.level`, `service.name`, `trace.id` (for APM correlation)
+- For Docker: use the Docker input or autodiscover
+- For Kubernetes: use the Kubernetes provider with autodiscover
+
+## SLOs
+
+When creating SLOs:
+- Use `kibana_api` with `POST /api/observability/slos`
+- SLI types: `sli.apm.transactionDuration`, `sli.apm.transactionErrorRate`, `sli.kql.custom`
+- Always set a realistic `objective.target` (e.g., 99.9% for critical, 99.5% for standard)
+- Create burn rate alerts after SLO creation using `create_alert_rule`
+
+## Alert Rules
+
+When creating alert rules:
+- Use `create_alert_rule` for common patterns (threshold, anomaly)
+- For custom: use `kibana_api` with `POST /api/alerting/rule`
+- Group alerts by `service.name` or `host.name` to reduce noise
+- Set appropriate `check_every` and `threshold` values — too sensitive = alert fatigue
+
+## ES|QL for O11Y
+
+Common patterns:
+```esql
+// Error rate by service
+FROM logs-* | WHERE log.level == "error" | STATS errors = COUNT(*) BY service.name | SORT errors DESC
+
+// P95 latency by service
+FROM traces-apm* | STATS p95 = PERCENTILE(transaction.duration.us, 95) BY service.name
+
+// Log volume trends
+FROM logs-* | STATS count = COUNT(*) BY BUCKET(@timestamp, 1 hour) | SORT @timestamp
+```

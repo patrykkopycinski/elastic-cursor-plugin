@@ -7,7 +7,27 @@ description: Interactive guide for complete Observability setup — discovers da
 
 Guide the user through a complete Observability configuration for their Elastic deployment.
 
+> **This is the umbrella skill.** For focused tasks, see the related skills: `o11y-slo-setup` for SLO creation, `o11y-service-dashboard` for individual service dashboards.
+
+## Trigger
+
+Use when the user asks to:
+- "Set up observability"
+- "Configure O11Y"
+- "Observability onboarding"
+- "Monitor my services"
+- "Full monitoring setup"
+
+Also activates on keywords: "observability setup", "O11Y onboarding", "monitoring setup", "full observability", "end-to-end monitoring"
+
+Do NOT use when:
+- "Create SLO" only (→ use `o11y-slo-setup`)
+- "Create dashboard" only (→ use `o11y-service-dashboard`)
+
 ## Steps
+
+### 0. Get Cluster Context
+Call `get_cluster_context` to get cached cluster awareness — version, health, installed features, and observability capabilities. This determines what's already configured and what needs setup.
 
 ### 1. Discover Data
 Call `discover_o11y_data` with no filters to get a complete picture of available data.
@@ -50,12 +70,39 @@ Report each created SLO with its ID and URL.
 Present a final summary:
 - Total dashboards created with URLs
 - Total SLOs created with IDs
+- APM instrumentation status
+- Log shipping status
+- Alert rules configured
 - Any warnings or issues encountered
-- Suggested next steps (set up alerts, add more services, etc.)
+- Suggested next steps (add more services, configure additional alert rules, etc.)
+
+### 8. Set Up Application Instrumentation (Optional)
+If APM data is missing or the user wants to add new services, call `setup_apm` to guide application instrumentation:
+- Language-specific agent installation
+- Configuration for connecting to the Elastic APM server
+- Verification that data is flowing
+
+### 9. Set Up Log Shipping (Optional)
+If log data is missing or incomplete, call `setup_log_shipping` to configure log ingestion:
+- Identify log sources (application logs, system logs, container logs)
+- Configure Elastic Agent or Filebeat
+- Set up log parsing and field extraction
+
+### 10. Create Alert Rules (Optional)
+After dashboards and SLOs are created, offer to set up alerting using `create_alert_rule`:
+- Latency threshold alerts for critical services
+- Error rate spike alerts
+- SLO burn rate alerts
+- Infrastructure health alerts (CPU, memory, disk)
 
 ## Tools Used
+- `get_cluster_context` — cached cluster awareness (version, health, capabilities)
 - `discover_o11y_data` — discover available O11Y data
 - `get_data_summary` — generate summary with recommendations
+- `setup_apm` — guide application instrumentation setup
+- `setup_log_shipping` — configure log ingestion
+- `create_alert_rule` — create alert rules for services and infrastructure
+- `create_dashboard` — high-level dashboard creation from discovered data
 - `kibana_api` — create dashboards (`POST /api/dashboards/dashboard`) and SLOs (`POST /api/observability/slos`)
 
 ## API References
@@ -64,3 +111,7 @@ Present a final summary:
 ## Prerequisites
 - `ES_URL` and `ES_API_KEY` (or basic auth) configured
 - At least some O11Y data flowing into Elasticsearch
+
+## Related Skills
+- `o11y-slo-setup` — focused SLO creation workflow
+- `o11y-service-dashboard` — focused service dashboard creation

@@ -6,6 +6,16 @@ alwaysApply: true
 # ES|QL vs Query DSL
 
 - **ES|QL** is best for: ad-hoc analysis, multi-step transformations, aggregations with GROUP BY, and tabular result sets. Use the `esql_query` tool or `POST /_query` with a `query` string. Syntax: `FROM index | WHERE condition | EVAL ... | STATS ... BY ... | SORT ... | LIMIT n`.
-- **Query DSL** (e.g. `search` tool with `query`) is best for: full-text search, kNN/vector search, complex bool queries, and when you need highlights, suggest, or search-specific features. Use `client.search()` or the MCP `search` tool.
+- **Query DSL** (e.g. `elasticsearch_api` tool with `query`) is best for: full-text search, kNN/vector search, complex bool queries, and when you need highlights, suggest, or search-specific features. Use `client.search()` or the MCP `elasticsearch_api` tool.
 - Prefer ES|QL when the user asks for "run a query," "aggregate," "analyze," or "tabular output." Prefer Query DSL when they ask for "search," "find documents," "vector search," or "relevance."
 - For hybrid workflows: you can use ES|QL for one step and Query DSL in another (e.g. aggregate in ES|QL, then fetch full documents by ID with Search API).
+
+## Known Constraints
+
+- **No nested field support**: ES|QL cannot query `nested` typed fields directly. Use `EVAL` to flatten or restructure data, or fall back to Query DSL for nested queries.
+- **Limited aggregation functions**: Fewer aggregation options compared to Query DSL (no pipeline aggs, no percentile ranks, etc.). Check the ES|QL function reference for what is available.
+- **No scripting**: There is no `script` support. Use `EVAL` expressions for computed fields and transformations.
+- **No highlighting**: ES|QL does not support search highlighting. Use Query DSL if highlighted snippets are required.
+- **ENRICH requires pre-configured policies**: The `ENRICH` command only works with enrich policies that have been created and executed via the Enrich API beforehand.
+- **Document metadata**: Use `METADATA _id, _index` after the `FROM` clause to access document metadata (e.g. `FROM logs-* METADATA _id, _index`).
+- **Cross-cluster search**: Use `FROM remote_cluster:index-*` syntax to query indices on remote clusters configured for cross-cluster search.

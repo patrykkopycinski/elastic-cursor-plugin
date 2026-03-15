@@ -28,8 +28,10 @@ Use when:
 ## Tools Used
 - `elasticsearch_api` — cluster health, node stats, shard allocation, index settings
 - `kibana_api` — Kibana health, feature availability
+- `kibana_info` — Quick Kibana health and version check
 - `discover_data` — index inventory and freshness
 - `get_cluster_context` — cached cluster overview for quick assessment
+- `refresh_cluster_knowledge` — Refresh cached context when stale
 - `esql_query` — diagnostic queries
 
 ## Output

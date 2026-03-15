@@ -239,3 +239,10 @@ elastic-cursor-plugin/
 - Node.js 20+
 - npm workspaces configured (root `package.json`)
 - TypeScript, tsup, zod available
+
+## Related Skills
+- `security-full-setup` — audit security coverage gaps
+- `o11y-full-setup` — audit observability coverage gaps
+- `agent-builder-skill-builder` — audit Agent Builder tool coverage
+- `security-detection-engineering` — audit detection rule quality
+- `o11y-slo-setup` — audit SLO coverage

@@ -7,7 +7,39 @@ globs: **/*.ts **/*.js **/*.mts **/*.mjs
 
 - Use the official `@elastic/elasticsearch` JavaScript/TypeScript client. Prefer the current major version (9.x).
 - Create the client with a single node (URL) or `cloud: { id }` for Elastic Cloud. Use `auth: { apiKey }` or `auth: { username, password }`; avoid hardcoding credentials in code.
-- Prefer async/await. Use `client.search()`, `client.index()`, `client.indices.create()`, etc. For bulk operations use `client.bulk()` with the correct operations array shape.
-- For ES|QL use `client.transport.request({ method: 'POST', path: '/_query', body: { query } })`.
-- Handle errors: check response status and catch network errors; surface clear messages to the user.
+- Prefer async/await. Use `client.search()`, `client.index()`, `client.indices.create()`, etc.
+
+## ES|QL
+
+Use the native `esql.query()` helper (9.x+), not `transport.request`:
+
+```typescript
+const result = await client.esql.query({
+  query: 'FROM logs-* | STATS count = COUNT(*) BY host.name',
+  format: 'json'
+});
+```
+
+## Bulk operations
+
+Use `client.helpers.bulk()` for streaming bulk operations — it handles batching, backpressure, and retries:
+
+```typescript
+await client.helpers.bulk({
+  datasource: documents,
+  onDocument: (doc) => ({ index: { _index: 'my-index' } })
+});
+```
+
+For one-shot bulk, use `client.bulk()` with the correct operations array shape.
+
+## Pagination
+
+- Prefer `search_after` with a `pit` (point in time) for deep pagination of large result sets.
+- Avoid `scroll` for new code — it holds resources on the cluster. Use `scroll` only for batch export jobs that need a consistent snapshot.
+- For small result sets (< 10,000 hits), `from` + `size` is fine.
+
+## Error handling
+
+- Check response status and catch network errors; surface clear messages to the user.
 - Do not use deprecated APIs (e.g. legacy elasticsearch.js package or deprecated method signatures).

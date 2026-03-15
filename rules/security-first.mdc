@@ -10,3 +10,33 @@ alwaysApply: true
 - **Least privilege**: When creating project or cluster API keys, grant only the indices and privileges required (e.g. read-only for search-only use cases).
 - **TLS**: Use HTTPS for Elasticsearch and Kibana in production. Disable TLS verification only for local development and document the risk.
 - **Secrets in code**: Do not log or echo credentials. Do not embed credentials in client-side or public front-end code.
+
+## API key expiration
+
+Always set `expiration` when creating API keys. Default to 30 days (`"30d"`) for development and CI keys. Production service keys can use longer expiration but should still have one — never create non-expiring keys unless explicitly required.
+
+## RBAC (Role-Based Access Control)
+
+- Create minimal-privilege roles scoped to specific indices and actions. Avoid granting `superuser` or `all` privileges.
+- Use Kibana Spaces for multi-tenancy — assign roles per space to isolate dashboards, saved objects, and data views.
+- For applications, create a dedicated role with only the index patterns and cluster privileges the application needs (e.g. `read` on `app-data-*`, `monitor` cluster privilege).
+
+## Service account tokens
+
+For service-to-service auth (e.g. Kibana, Fleet, APM Server), prefer service account tokens over API keys:
+
+```
+POST /_security/service/{namespace}/{service}/credential/token
+```
+
+Service accounts are managed by Elastic and cannot be modified by users. Use them for built-in integrations; use API keys for custom application auth.
+
+## Cross-cluster API keys
+
+For cross-cluster search (CCS) and cross-cluster replication (CCR), create dedicated cross-cluster API keys:
+
+```
+POST /_security/cross_cluster/api_key
+```
+
+These keys grant only the `cross_cluster_search` or `cross_cluster_replication` privilege and cannot be used for regular data access.

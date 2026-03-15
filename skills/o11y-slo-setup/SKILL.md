@@ -7,7 +7,26 @@ description: Interactive guide for creating SLOs from discovered APM and metric 
 
 Guide the user through creating Service Level Objectives based on their available data.
 
+## Trigger
+
+Use when the user asks to:
+- "Create SLO"
+- "Set up SLOs"
+- "Service level objectives"
+- "SLO targets"
+- "Availability SLO"
+- "Latency SLO"
+
+Also activates on keywords: "SLO", "service level", "burn rate", "error budget", "SLI", "availability target"
+
+Do NOT use when:
+- "Create dashboard" (→ use `o11y-service-dashboard`)
+- "Full monitoring setup" (→ use `o11y-full-setup`)
+
 ## Steps
+
+### 0. Get Cluster Context
+Call `get_cluster_context` to get cached cluster awareness — version, health, installed features, and SLO capabilities. This confirms that the SLO feature is available in the Kibana deployment.
 
 ### 1. Discover Data
 Call `discover_o11y_data` to find APM services and metrics that can support SLOs.
@@ -47,10 +66,15 @@ Present:
 - Current status of each (if available from creation response)
 - Suggested next steps: monitor burn rates, set up burn rate alerts, create an SLO dashboard
 
+### 7. Create Burn Rate Alerts (Optional)
+For each created SLO, offer to set up burn rate alerts using `create_alert_rule`. Burn rate alerts trigger when the error budget is being consumed faster than expected, giving early warning before an SLO breach.
+
 ## Tools Used
+- `get_cluster_context` — cached cluster awareness (version, health, capabilities)
 - `discover_o11y_data` — discover APM services and metrics for SLO candidates
 - `get_data_summary` — generate SLO recommendations
 - `kibana_api` — list existing SLOs (`GET /api/observability/slos`) and create new ones (`POST /api/observability/slos`)
+- `create_alert_rule` — create burn rate alerts for SLOs
 
 ## API References
 - `elastic://docs/api/kibana` — Kibana REST API reference for SLO endpoints (`/api/observability/slos`)
@@ -59,3 +83,7 @@ Present:
 - `ES_URL` and `ES_API_KEY` configured
 - SLO feature enabled in Kibana (Observability → SLOs)
 - APM data or custom metrics flowing
+
+## Related Skills
+- `o11y-full-setup` — complete observability setup including dashboards and SLOs
+- `o11y-service-dashboard` — create service dashboards to complement SLO monitoring

@@ -7,7 +7,26 @@ description: Interactive threat hunting workflow using ES|QL and Elasticsearch q
 
 Guide the user through proactive threat hunting in their Elastic Security deployment.
 
+## Trigger
+
+Use when the user asks to:
+- "Hunt for threats"
+- "Find suspicious activity"
+- "Search for IOCs"
+- "MITRE hunt"
+- "Proactive threat detection"
+- "Lateral movement"
+
+Also activates on keywords: "threat hunt", "IOC search", "suspicious activity", "behavioral hunt", "anomaly hunt"
+
+Do NOT use when:
+- "Set up security" (→ use `security-full-setup`)
+- "Create detection rule" (→ use `security-detection-engineering`)
+
 ## Steps
+
+### 0. Get Cluster Context
+Call `get_cluster_context` to get cached cluster awareness — version, health, installed features, and security data availability. This informs which data sources and query capabilities are available for the hunt.
 
 ### 1. Define the Hunt Hypothesis
 Ask the user what they want to hunt for. Common starting points:
@@ -111,6 +130,7 @@ Present the hunt results:
 - Suggested follow-up hunts
 
 ## Tools Used
+- `get_cluster_context` — cached cluster awareness (version, health, capabilities)
 - `discover_security_data` — verify data source availability for the hunt
 - `esql_query` — run iterative hunt queries
 - `elasticsearch_api` — complex search queries (EQL sequences, nested, wildcard)
@@ -128,3 +148,7 @@ Present the hunt results:
 - `ES_URL` and `ES_API_KEY` configured
 - Security data sources with sufficient history (7+ days recommended for behavioral hunts)
 - `KIBANA_URL` configured for rule creation and case management
+
+## Related Skills
+- `security-detection-engineering` — operationalize hunt findings into persistent detection rules
+- `security-case-management` — track and manage investigations from hunt findings

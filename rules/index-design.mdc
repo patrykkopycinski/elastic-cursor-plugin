@@ -6,8 +6,38 @@ alwaysApply: true
 # Index design best practices
 
 - **Keyword vs text**: Use `keyword` for exact match, filters, sorting, and aggregations. Use `text` for full-text search (with an analyzer). Use `keyword` with a subfield for both (e.g. `title.keyword`).
-- **Vectors**: Use `dense_vector` with dimensions matching your embedding model; set `index: true` and `similarity` (e.g. cosine) when you need kNN search. Use `rank_features` or sparse vectors where appropriate.
 - **Dates**: Use `date` type for time fields; use the same format as your ingestion or a compatible format.
 - **Nested vs flattened**: Use `nested` only when you need to query or aggregate on inner objects independently; otherwise `object` (default) or `flattened` may be simpler.
 - **Dynamic mapping**: Rely on dynamic mapping for quick prototyping; lock down with explicit mappings and `dynamic: false` or `strict` for production when schema is stable.
 - **Templates and ILM**: For time-series indices (logs, metrics), use index templates and Index Lifecycle Management (ILM) for rollover and retention.
+
+## Data streams
+
+Use data streams for append-only time-series data (logs, metrics, traces, events). Use regular indices for reference data, application data, or anything requiring in-place updates.
+
+- Data streams require a `@timestamp` field and are backed by index templates with `data_stream: {}`.
+- Write to the stream name (e.g. `logs-nginx-default`); Elasticsearch handles rollover and backing indices automatically.
+- Combine with ILM/Data Stream Lifecycle for automated retention, rollover, and tiered storage.
+
+## Runtime fields
+
+Define fields at query time without re-indexing. Useful for prototyping, one-off analysis, or adding computed fields to existing indices:
+
+```json
+{
+  "runtime_mappings": {
+    "day_of_week": {
+      "type": "keyword",
+      "script": "emit(doc['@timestamp'].value.dayOfWeekEnum.getDisplayName(TextStyle.FULL, Locale.ROOT))"
+    }
+  }
+}
+```
+
+Runtime fields trade query-time compute for indexing flexibility. For fields queried frequently at scale, promote them to indexed fields.
+
+## Vector and semantic field types
+
+- **`dense_vector`**: For custom embedding models. Specify `dims` (dimensions) and `similarity` (cosine, dot_product, l2_norm). Set `index: true` for kNN search.
+- **`sparse_vector`**: For ELSER model outputs and other sparse embedding models. No `dims` needed — stores token-weight pairs.
+- **`semantic_text`**: Integrated embedding + search field. Elasticsearch generates embeddings at ingest time using a configured inference endpoint, then supports semantic queries without manual embedding pipelines. Simplest path to semantic search.
