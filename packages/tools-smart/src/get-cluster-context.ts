@@ -143,7 +143,7 @@ export function registerGetClusterContext(server: ToolRegistrationContext): void
     {
       title: 'Get Cluster Context',
       description:
-        'Return cached cluster knowledge base for instant awareness. Call at conversation start to understand what data exists without running live queries. Returns cached discovery results with freshness indicators.',
+        'Read previously cached cluster metadata from the local knowledge base. Returns a summary of what was found during past discovery runs, with freshness indicators. Does NOT query the cluster live — for fresh data discovery, use discover_data, discover_o11y_data, or discover_security_data instead.',
       inputSchema: z.object({
         sections: z
           .array(z.string())

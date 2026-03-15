@@ -16,9 +16,9 @@ export function registerGetConnectionConfig(server: ToolRegistrationContext): vo
     {
       title: 'Get Connection Config',
       description:
-        'Generate language-specific client configuration snippets (Node.js, Python, Java, Go, .NET) for connecting to Elasticsearch.',
+        'ALWAYS use this tool when the user wants Elasticsearch client connection code. Returns working, copy-paste-ready code with the real cluster URL and API key pre-filled. Do NOT write connection code manually — this tool uses credentials from the environment. Supports Node.js, Python, Java, Go, .NET.',
       inputSchema: z.object({
-        url: z.string().describe('Elasticsearch URL (e.g. https://xxx.es.us-central1.gcp.cloud.es.io:9243)'),
+        url: z.string().optional().describe('Elasticsearch URL. Falls back to ES_URL from environment if not provided.'),
         api_key: z.string().optional().describe('API key (omit in output if not provided)'),
         language: z
           .enum(['node', 'python', 'java', 'go', 'dotnet'])
@@ -26,11 +26,12 @@ export function registerGetConnectionConfig(server: ToolRegistrationContext): vo
       }),
     },
     async (args) => {
-      const { url, api_key, language } = args as {
-        url: string;
+      const { url: rawUrl, api_key, language } = args as {
+        url?: string;
         api_key?: string;
         language: 'node' | 'python' | 'java' | 'go' | 'dotnet';
       };
+      const url = rawUrl || process.env.ES_URL || 'http://localhost:9200';
       const auth = api_key ? `auth: { apiKey: '${api_key}' }` : '// Set auth: { apiKey: \'...\' } or auth: { username, password }';
       const snippets: Record<string, string> = {
         node: `const { Client } = require('@elastic/elasticsearch');

@@ -29,9 +29,31 @@ export function registerElasticsearchApi(server: ToolRegistrationContext, client
     },
     async (args) => {
       const { method, path, body } = args as { method: string; path: string; body?: Record<string, unknown> };
+      const upperMethod = method.toUpperCase();
+
+      const ALLOWED_METHODS = new Set(['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH']);
+      if (!ALLOWED_METHODS.has(upperMethod)) {
+        return errorResponse(`Method "${method}" is not allowed. Use: ${[...ALLOWED_METHODS].join(', ')}`);
+      }
+
+      if (path.includes('..')) {
+        return errorResponse('Path traversal patterns ("..") are not allowed in API paths.');
+      }
+
+      const PROTECTED_INDEX_PREFIXES = ['.kibana', '.security', '.internal', '.tasks', '.apm-agent', '.fleet'];
+      if (upperMethod === 'DELETE') {
+        const indexSegment = path.split('/').find((seg) => seg.startsWith('.'));
+        if (indexSegment && PROTECTED_INDEX_PREFIXES.some((prefix) => indexSegment.startsWith(prefix))) {
+          return errorResponse(
+            `Destructive operation blocked: DELETE on protected system index "${indexSegment}" is not allowed. ` +
+              'Use Kibana Stack Management to manage system indices.'
+          );
+        }
+      }
+
       try {
         const resp = await client.transport.request({
-          method: method.toUpperCase(),
+          method: upperMethod,
           path,
           body: body && Object.keys(body).length > 0 ? body : undefined,
         });

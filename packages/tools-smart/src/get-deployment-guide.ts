@@ -16,7 +16,7 @@ export function registerGetDeploymentGuide(server: ToolRegistrationContext): voi
     {
       title: 'Get Deployment Guide',
       description:
-        'Get a step-by-step deployment guide. Ask the user first: "Do you prefer Cloud (managed) or on-prem (Docker)?" Then call with preference "cloud" or "on_prem". On-prem uses Docker (Elasticsearch, Kibana, Fleet server, APM server, Elastic Agent).',
+        'Return a step-by-step deployment guide for setting up the Elastic Stack. Pass preference="cloud" for Elastic Cloud (managed, no infrastructure) or preference="on_prem" for self-hosted Docker. If the user mentions cloud, hosted, or managed, use "cloud". If they mention Docker, self-hosted, or on-prem, use "on_prem". Default to "cloud" if unclear.',
       inputSchema: z.object({
         preference: z
           .enum(['cloud', 'on_prem'])

@@ -18,7 +18,7 @@ export function registerSetupApm(server: ToolRegistrationContext): void {
     {
       title: 'Setup APM',
       description:
-        'Generate APM integration code for Node.js (Express, Fastify, Koa, NestJS), Python (Django, Flask, FastAPI), Java (Spring Boot), Go, or .NET.',
+        'ALWAYS use this tool when the user wants to add Elastic APM to their application. Returns ready-to-use instrumentation code with the correct APM server URL and secret token pre-filled from the environment. Do NOT write APM setup code manually — this tool uses credentials from the configured environment. Supports: Express, Fastify, Koa, NestJS, Django, Flask, FastAPI, Spring Boot, Go, .NET.',
       inputSchema: z.object({
         framework: z.enum(FRAMEWORKS).describe('Target framework'),
         server_url: z.string().url().optional().describe('APM Server URL (e.g. https://xxx.apm.region.elastic-cloud.com)'),

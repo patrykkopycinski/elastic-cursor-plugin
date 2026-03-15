@@ -604,7 +604,7 @@ export function registerDiscoverO11yData(server: ToolRegistrationContext): void 
     {
       title: 'Discover O11Y Data',
       description:
-        'Auto-detect APM services, host/container metrics, log streams, and data freshness across an Elastic deployment. Returns a rich profile of available observability data.',
+        'Run live queries to discover observability data: APM services, host metrics, container metrics, log streams, and IoT data with freshness indicators. Use when the user asks about monitoring, APM, traces, metrics, logs, or observability. For general data inventory, use discover_data instead.',
       inputSchema: z.object({
         data_streams: z
           .array(z.string())

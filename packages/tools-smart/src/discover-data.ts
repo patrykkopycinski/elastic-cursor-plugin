@@ -383,7 +383,7 @@ export function registerDiscoverData(server: ToolRegistrationContext): void {
     {
       title: 'Discover Data',
       description:
-        'Generic data discovery across an Elasticsearch deployment. Returns cluster info, indices/data streams with doc counts and freshness, index templates, component templates, ingest pipelines, and lifecycle policies.',
+        'Run live queries to discover ALL data in the Elasticsearch cluster: indices, data streams, templates, pipelines, and lifecycle policies with document counts and freshness. Use this as the PRIMARY tool when the user asks "what data do I have?" or "show me my indices". For observability-specific deep-dive, use discover_o11y_data. For security analysis, use discover_security_data.',
       inputSchema: z.object({
         index_patterns: z
           .array(z.string())

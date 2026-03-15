@@ -330,7 +330,7 @@ export function registerDiscoverSecurityData(server: ToolRegistrationContext): v
     {
       title: 'Discover Security Data',
       description:
-        'Auto-detect security data sources (Endpoint, Auditbeat, cloud security logs), detection rule coverage, and alert volumes across an Elastic deployment.',
+        'Run live queries to discover security data: endpoint telemetry, audit logs, cloud security logs, detection rule coverage, and alert volumes. Use when the user asks about security, alerts, detection rules, or SIEM. For general data inventory, use discover_data instead.',
       inputSchema: z.object({
         time_range_from: z
           .string()

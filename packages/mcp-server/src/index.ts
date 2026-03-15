@@ -69,7 +69,18 @@ Startup health: ${health.ok ? `Connected (${health.clusterName ?? 'cluster'} ${h
 
 **API Gateway Tools:** Use elasticsearch_api, kibana_api, and cloud_api for direct REST API access. Use esql_query for ES|QL queries with tabular output. For API reference documentation, use the elastic-docs MCP server tools (search_docs, get_document_by_url).
 
-**Smart Workflow Tools:** Use discover_o11y_data to auto-detect APM services, metrics, and logs. Use discover_security_data for security data sources and detection rule coverage. Use get_data_summary for a rich summary with dashboard and SLO recommendations. Use get_cluster_context at the start of a conversation for instant cached cluster awareness. Use list_workflows and run_workflow for multi-step O11Y configuration flows.
+**Tool Selection Guide:**
+- User wants Elasticsearch client connection code → get_connection_config (ALWAYS use this, never write connection code manually)
+- User wants to deploy Elastic → get_deployment_guide (pass "cloud" or "on_prem")
+- User wants to add APM instrumentation → setup_apm (ALWAYS use this, never write APM code manually)
+- User wants log shipping config → setup_log_shipping
+- User asks "what data do I have?" → discover_data (primary discovery tool)
+- User asks about APM/metrics/logs/observability → discover_o11y_data
+- User asks about security/alerts/detection rules → discover_security_data
+- User wants a summary with recommendations → get_data_summary (after running discover_o11y_data first)
+- User wants raw ES REST API access → elasticsearch_api
+- User wants to run an ES|QL query → esql_query
+- User wants workflow automation → list_workflows, run_workflow
 
 Return copy-paste-ready snippets (connection config, code) when possible.`,
     }
